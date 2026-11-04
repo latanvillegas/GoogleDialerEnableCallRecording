@@ -1,3 +1,9 @@
+## [1.2.0-dev.5](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.4...v1.2.0-dev.5) (2026-11-04)
+
+### 🐛 Bug Fixes
+
+* **phone:** accept Morphe-normalized Android theme attribute aliases in AMOLED patch ([9ea9bdd](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/9ea9bdde177e5f2de30670296b026001b2f56da3))
+
 ## [1.2.0-dev.4](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.3...v1.2.0-dev.4) (2026-11-04)
 
 ### 🐛 Bug Fixes
