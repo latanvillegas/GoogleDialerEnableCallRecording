@@ -313,10 +313,91 @@ internal fun installPureAmoledNightWidgetOverrides(
     return changes
 }
 
+
+/**
+ * The actual main screens use two drawer_main_fragment layout variants.
+ * The inspected Phone 241 APK additionally has landscape and sw600dp variants.
+ *
+ * The Material3 dynamic overlay can override theme-based surface colors.
+ * Therefore, explicit backgrounds are applied to NIGHT-QUALIFIED COPIES ONLY:
+ * the original six day/layout files are never modified.
+ */
+internal fun applyPureAmoledNightMainLayout(
+    document: Document,
+    expectBottomNavigation: Boolean,
+): Int {
+    val root = document.documentElement
+    if (root.tagName != "FrameLayout") {
+        throw PatchException("Pure AMOLED: unexpected main layout root ${root.tagName}")
+    }
+
+    fun exactlyOne(tag: String): Element {
+        val matches = root.getElementsByTagName(tag)
+        if (matches.length != 1) {
+            throw PatchException("Pure AMOLED: expected one $tag, found ${matches.length}")
+        }
+        return matches.item(0) as? Element
+            ?: throw PatchException("Pure AMOLED: invalid $tag element")
+    }
+
+    val drawer = exactlyOne("androidx.drawerlayout.widget.DrawerLayout")
+    val navigationDrawer = exactlyOne("com.google.android.material.navigation.NavigationView")
+    val bottomViews = root.getElementsByTagName(
+        "com.google.android.material.bottomnavigation.BottomNavigationView",
+    )
+    val expectedBottomCount = if (expectBottomNavigation) 1 else 0
+    if (bottomViews.length != expectedBottomCount) {
+        throw PatchException(
+            "Pure AMOLED: expected $expectedBottomCount bottom navigation views, " +
+                "found ${bottomViews.length}",
+        )
+    }
+
+    fun setBlackBackground(
+        element: Element,
+        expectedAttribute: String?,
+        component: String,
+    ): Int {
+        val previous = element.getAttribute("android:background").trim()
+        if (previous.equals(BLACK, ignoreCase = true)) return 0
+
+        if (expectedAttribute == null) {
+            if (previous.isNotEmpty()) {
+                throw PatchException(
+                    "Pure AMOLED: unexpected $component background=$previous",
+                )
+            }
+        } else if (!matchesExpectedAmoledAttributeReference(
+                previous,
+                expectedAttribute,
+            )
+        ) {
+            throw PatchException("Pure AMOLED: unexpected $component background=$previous")
+        }
+
+        element.setAttribute("android:background", BLACK)
+        return 1
+    }
+
+    var changes = 0
+    changes += setBlackBackground(drawer, "?colorSurfaceContainer", "drawer root")
+    changes += setBlackBackground(navigationDrawer, null, "navigation drawer")
+    if (expectBottomNavigation) {
+        val bottomNavigation = bottomViews.item(0) as? Element
+            ?: throw PatchException("Pure AMOLED: invalid bottom navigation")
+        changes += setBlackBackground(
+            bottomNavigation,
+            "?colorNavigationBar",
+            "bottom navigation",
+        )
+    }
+    return changes
+}
+
 @Suppress("unused")
 val pureAmoledSystemDefaultPatch = resourcePatch(
     name = "Pure AMOLED - System default",
-    description = "Experimental: system-following pure AMOLED surfaces, drawer and bottom navigation; neutral selected-tab indicator in night mode. Light mode, call recording and DroidGuard unchanged.",
+    description = "Experimental: system-following pure black main surfaces, drawer, and bottom navigation via night-only layout overlays; neutral active-tab indicator. Light mode, call recording and DroidGuard unchanged.",
     default = false,
 ) {
     compatibleWith(
@@ -402,7 +483,51 @@ val pureAmoledSystemDefaultPatch = resourcePatch(
             }
         }
 
-        if (changedColors + changedStyles + changedDarkPalettes + changedNavigation == 0) {
+        // The six original layout variants have been inspected from the
+        // user's Google Phone 241 APK. Create only night-qualified overrides.
+        // Explicit view backgrounds take precedence over dynamic color overlays.
+        val layoutVariants = listOf(
+            "layout" to "layout-night",
+            "layout-land" to "layout-land-night",
+            "layout-sw600dp" to "layout-sw600dp-night",
+        )
+        val mainLayouts = listOf(
+            "drawer_main_fragment.xml",
+            "drawer_main_fragment_cc26.xml",
+        )
+        var changedNightLayouts = 0
+        for ((sourceQualifier, nightQualifier) in layoutVariants) {
+            val nightDirectory = resourceDirectory.resolve(nightQualifier)
+            if (!nightDirectory.isDirectory && !nightDirectory.mkdirs()) {
+                throw PatchException("Pure AMOLED: cannot create $nightQualifier")
+            }
+            for (layoutName in mainLayouts) {
+                val originalLayout = resourceDirectory
+                    .resolve(sourceQualifier)
+                    .resolve(layoutName)
+                if (!originalLayout.isFile) {
+                    throw PatchException(
+                        "Pure AMOLED: inspected layout is missing: $sourceQualifier/$layoutName",
+                    )
+                }
+
+                val destination = nightDirectory.resolve(layoutName)
+                if (destination.exists()) {
+                    throw PatchException(
+                        "Pure AMOLED: refusing to overwrite $nightQualifier/$layoutName",
+                    )
+                }
+                originalLayout.copyTo(destination, overwrite = false)
+                document("res/$nightQualifier/$layoutName").use { nightLayout ->
+                    changedNightLayouts += applyPureAmoledNightMainLayout(
+                        nightLayout,
+                        expectBottomNavigation = sourceQualifier == "layout",
+                    )
+                }
+            }
+        }
+
+        if (changedColors + changedStyles + changedDarkPalettes + changedNavigation + changedNightLayouts == 0) {
             throw PatchException(
                 "Pure AMOLED: no verified dark surface resources found; " +
                     "the APK needs resource reconnaissance before theme modification",
@@ -411,8 +536,8 @@ val pureAmoledSystemDefaultPatch = resourcePatch(
 
         Logger.getLogger("LocalGooglePhone.PureAmoled").info(
             "Pure AMOLED: night surfaces=$changedColors, night styles=$changedStyles, " +
-                "named dark palettes=$changedDarkPalettes, dark navigation=$changedNavigation; " +
-                "day mode and both existing bytecode patches untouched",
+                "named dark palettes=$changedDarkPalettes, dark navigation=$changedNavigation, " +
+                "night main layouts=$changedNightLayouts; day layouts and both bytecode patches untouched",
         )
     }
 }

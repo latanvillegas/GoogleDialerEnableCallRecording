@@ -302,6 +302,84 @@ class PureAmoledSystemDefaultPatchTest {
         assertEquals("?colorSecondaryContainer", sourceIndicator.getElementsByTagName("item").item(1).textContent)
     }
 
+    @Test fun `main portrait layout receives explicit black only in night copy`() {
+        val source = xml(
+            """
+            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android">
+                <androidx.drawerlayout.widget.DrawerLayout android:background="?attr/colorSurfaceContainer">
+                    <com.google.android.material.bottomnavigation.BottomNavigationView
+                        android:id="@id/navigation_bar_layout"
+                        android:background="?attr/colorNavigationBar" />
+                    <com.google.android.material.navigation.NavigationView
+                        android:id="@id/main_fragment_navigation" />
+                </androidx.drawerlayout.widget.DrawerLayout>
+            </FrameLayout>
+            """.trimIndent(),
+        )
+        val night = xml(
+            """
+            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android">
+                <androidx.drawerlayout.widget.DrawerLayout android:background="?attr/colorSurfaceContainer">
+                    <com.google.android.material.bottomnavigation.BottomNavigationView
+                        android:id="@id/navigation_bar_layout"
+                        android:background="?attr/colorNavigationBar" />
+                    <com.google.android.material.navigation.NavigationView
+                        android:id="@id/main_fragment_navigation" />
+                </androidx.drawerlayout.widget.DrawerLayout>
+            </FrameLayout>
+            """.trimIndent(),
+        )
+        assertEquals(3, applyPureAmoledNightMainLayout(night, expectBottomNavigation = true))
+        assertEquals(0, applyPureAmoledNightMainLayout(night, expectBottomNavigation = true))
+
+        val drawer = night.getElementsByTagName("androidx.drawerlayout.widget.DrawerLayout")
+        val bottom = night.getElementsByTagName("com.google.android.material.bottomnavigation.BottomNavigationView")
+        val side = night.getElementsByTagName("com.google.android.material.navigation.NavigationView")
+        assertEquals("#FF000000", (drawer.item(0) as org.w3c.dom.Element).getAttribute("android:background"))
+        assertEquals("#FF000000", (bottom.item(0) as org.w3c.dom.Element).getAttribute("android:background"))
+        assertEquals("#FF000000", (side.item(0) as org.w3c.dom.Element).getAttribute("android:background"))
+
+        val dayDrawer = source.getElementsByTagName("androidx.drawerlayout.widget.DrawerLayout")
+        val dayBottom = source.getElementsByTagName("com.google.android.material.bottomnavigation.BottomNavigationView")
+        val daySide = source.getElementsByTagName("com.google.android.material.navigation.NavigationView")
+        assertEquals("?attr/colorSurfaceContainer", (dayDrawer.item(0) as org.w3c.dom.Element).getAttribute("android:background"))
+        assertEquals("?attr/colorNavigationBar", (dayBottom.item(0) as org.w3c.dom.Element).getAttribute("android:background"))
+        assertEquals("", (daySide.item(0) as org.w3c.dom.Element).getAttribute("android:background"))
+    }
+
+    @Test fun `landscape main layout has black drawer and no bottom navigation`() {
+        val night = xml(
+            """
+            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android">
+                <androidx.drawerlayout.widget.DrawerLayout android:background="?colorSurfaceContainer">
+                    <com.google.android.material.navigation.NavigationView
+                        android:id="@id/main_fragment_navigation" />
+                </androidx.drawerlayout.widget.DrawerLayout>
+            </FrameLayout>
+            """.trimIndent(),
+        )
+        assertEquals(2, applyPureAmoledNightMainLayout(night, expectBottomNavigation = false))
+        assertEquals(0, applyPureAmoledNightMainLayout(night, expectBottomNavigation = false))
+    }
+
+    @Test fun `night main layout rejects unknown dynamic backgrounds`() {
+        val night = xml(
+            """
+            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android">
+                <androidx.drawerlayout.widget.DrawerLayout android:background="?attr/colorPrimary">
+                    <com.google.android.material.bottomnavigation.BottomNavigationView
+                        android:background="?attr/colorNavigationBar" />
+                    <com.google.android.material.navigation.NavigationView />
+                </androidx.drawerlayout.widget.DrawerLayout>
+            </FrameLayout>
+            """.trimIndent(),
+        )
+        val error = kotlin.runCatching {
+            applyPureAmoledNightMainLayout(night, expectBottomNavigation = true)
+        }.exceptionOrNull()
+        assertTrue(error is app.morphe.patcher.patch.PatchException)
+    }
+
     @Test fun `recolors night theme backgrounds without changing controls`() {
         val doc = xml(
             """
