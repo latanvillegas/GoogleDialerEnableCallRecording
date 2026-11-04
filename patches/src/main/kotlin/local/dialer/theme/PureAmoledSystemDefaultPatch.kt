@@ -186,6 +186,17 @@ private val nightWidgetOverrides = listOf(
     ),
 )
 
+/**
+ * Morphe may materialize shorthand ?attribute references as ?attr/attribute.
+ * Accept precisely those two encodings, never a different attribute.
+ */
+internal fun matchesExpectedAmoledAttributeReference(actual: String, expected: String): Boolean {
+    val normalized = actual.trim()
+    if (normalized == expected) return true
+    if (!expected.startsWith("?") || expected.startsWith("?attr/")) return false
+    return normalized == "?attr/${expected.removePrefix("?")}"
+}
+
 private fun namedStyle(root: Element, name: String): Element? {
     val children = root.childNodes
     var result: Element? = null
@@ -227,7 +238,9 @@ internal fun applyPureAmoledDarkDialerNavigation(document: Document): Int {
     val background = styleItem(darkStyle, "colorNavigationBar")
         ?: throw PatchException("Pure AMOLED: dark colorNavigationBar is missing")
     val original = background.textContent.trim()
-    if (original != "?colorSurfaceContainerLow" && !original.equals(BLACK, true)) {
+    if (!matchesExpectedAmoledAttributeReference(original, "?colorSurfaceContainerLow") &&
+        !original.equals(BLACK, true)
+    ) {
         throw PatchException("Pure AMOLED: unexpected dark colorNavigationBar=$original")
     }
 
@@ -247,7 +260,7 @@ internal fun applyPureAmoledDarkDialerNavigation(document: Document): Int {
     } else {
         val previous = systemNavigation.textContent.trim()
         if (previous != "@android:color/transparent" &&
-            previous != "?colorNavigationBar" &&
+            !matchesExpectedAmoledAttributeReference(previous, "?colorNavigationBar") &&
             !previous.equals(BLACK, true)
         ) {
             throw PatchException("Pure AMOLED: unexpected system navigationBarColor=$previous")
@@ -277,7 +290,7 @@ internal fun installPureAmoledNightWidgetOverrides(
         val sourceItem = styleItem(sourceStyle, rule.attribute)
             ?: throw PatchException("Pure AMOLED: widget attribute missing: ${rule.name}")
 
-        if (sourceItem.textContent.trim() != rule.expectedValue) {
+        if (!matchesExpectedAmoledAttributeReference(sourceItem.textContent, rule.expectedValue)) {
             throw PatchException("Pure AMOLED: source widget changed: ${rule.name}")
         }
 

@@ -163,6 +163,73 @@ class PureAmoledSystemDefaultPatchTest {
         }
     }
 
+    @Test fun `accepts only the two verified encodings of an expected theme attribute`() {
+        assertTrue(matchesExpectedAmoledAttributeReference("?colorSurfaceContainerLow", "?colorSurfaceContainerLow"))
+        assertTrue(matchesExpectedAmoledAttributeReference("?attr/colorSurfaceContainerLow", "?colorSurfaceContainerLow"))
+        assertTrue(matchesExpectedAmoledAttributeReference("  ?attr/colorSecondaryContainer  ", "?colorSecondaryContainer"))
+        assertFalse(matchesExpectedAmoledAttributeReference("?attr/colorSurfaceContainerHigh", "?colorSurfaceContainerLow"))
+        assertFalse(matchesExpectedAmoledAttributeReference("?attr/colorPrimary", "?colorSecondaryContainer"))
+        assertFalse(matchesExpectedAmoledAttributeReference("?android:attr/colorSurfaceContainerLow", "?colorSurfaceContainerLow"))
+        assertFalse(matchesExpectedAmoledAttributeReference("?colorSurfaceContainerLow", "@color/unknown"))
+    }
+
+    @Test fun `Morphe normalized dark Dialer navigation attributes no longer abort patching`() {
+        val doc = xml(
+            """
+            <resources>
+                <style name="Base.Theme.GoogleMaterial3.Dialer.Dark.NoActionBar">
+                    <item name="colorNavigationBar">?attr/colorSurfaceContainerLow</item>
+                    <item name="android:navigationBarColor">?attr/colorNavigationBar</item>
+                    <item name="colorOnSurface">#FFE8E8E8</item>
+                </style>
+                <style name="Base.Theme.GoogleMaterial3.Dialer.Light.NoActionBar">
+                    <item name="colorNavigationBar">?attr/colorSurfaceContainerHigh</item>
+                </style>
+            </resources>
+            """.trimIndent(),
+        )
+        assertEquals(2, applyPureAmoledDarkDialerNavigation(doc))
+        assertEquals(0, applyPureAmoledDarkDialerNavigation(doc))
+        val styles = doc.getElementsByTagName("style")
+        val dark = styles.item(0) as org.w3c.dom.Element
+        val light = styles.item(1) as org.w3c.dom.Element
+        val items = dark.getElementsByTagName("item")
+        assertEquals("#FF000000", items.item(0).textContent)
+        assertEquals("#FF000000", items.item(1).textContent)
+        assertEquals("#FFE8E8E8", items.item(2).textContent)
+        assertEquals("?attr/colorSurfaceContainerHigh", light.getElementsByTagName("item").item(0).textContent)
+    }
+
+    @Test fun `Morphe normalized widget references are accepted in night overlays`() {
+        val base = xml(
+            """
+            <resources>
+                <style name="Widget.Material3.NavigationView" parent="@style/Widget.MaterialComponents.NavigationView">
+                    <item name="android:background">?attr/colorSurfaceContainerLow</item>
+                    <item name="itemTextColor">@color/m3_navigation_item_text_color</item>
+                </style>
+                <style name="Widget.Material3Expressive.BottomNavigationView.ActiveIndicator" parent="@style/Widget.Material3.BottomNavigationView.ActiveIndicator">
+                    <item name="android:height">@dimen/m3_comp_nav_bar_item_vertical_active_indicator_height</item>
+                    <item name="android:color">?attr/colorSecondaryContainer</item>
+                </style>
+            </resources>
+            """.trimIndent(),
+        )
+        val night = xml("<resources/>")
+        assertEquals(2, installPureAmoledNightWidgetOverrides(base, night))
+        assertEquals(0, installPureAmoledNightWidgetOverrides(base, night))
+        val nightStyles = night.getElementsByTagName("style")
+        val drawer = nightStyles.item(0) as org.w3c.dom.Element
+        val indicator = nightStyles.item(1) as org.w3c.dom.Element
+        assertEquals("#FF000000", drawer.getElementsByTagName("item").item(0).textContent)
+        assertEquals("@color/m3_navigation_item_text_color", drawer.getElementsByTagName("item").item(1).textContent)
+        assertEquals("#FF262626", indicator.getElementsByTagName("item").item(1).textContent)
+
+        val original = base.getElementsByTagName("style")
+        assertEquals("?attr/colorSurfaceContainerLow", (original.item(0) as org.w3c.dom.Element).getElementsByTagName("item").item(0).textContent)
+        assertEquals("?attr/colorSecondaryContainer", (original.item(1) as org.w3c.dom.Element).getElementsByTagName("item").item(1).textContent)
+    }
+
     @Test fun `sets black bottom and system navigation in inspected dark Dialer theme only`() {
         val document = xml(
             """
