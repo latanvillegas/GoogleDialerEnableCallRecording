@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-04T21:01:35",
-  "description": "## [1.2.0-dev.1](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.1.0...v1.2.0-dev.1) (2026-11-04)\n\n### ✨ New Features\n\n* **phone:** add isolated experimental pure AMOLED system theme patch ([4ae0539](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/4ae0539b483cc8942edca47a58d92d8f6c07814b))",
-  "download_url": "https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/download/v1.2.0-dev.1/patches-1.2.0-dev.1.mpp",
+  "created_at": "2026-11-04T22:49:50",
+  "description": "## [1.2.0-dev.2](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.1...v1.2.0-dev.2) (2026-11-04)\n\n### 🐛 Bug Fixes\n\n* **phone:** preserve functional colors in pure AMOLED dark resources ([c703423](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/c703423597ec8ba39b2e01c01ce9ea6919d3d152))",
+  "download_url": "https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/download/v1.2.0-dev.2/patches-1.2.0-dev.2.mpp",
   "signature_download_url": "",
-  "version": "1.2.0-dev.1"
+  "version": "1.2.0-dev.2"
 }

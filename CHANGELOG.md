@@ -1,3 +1,9 @@
+## [1.2.0-dev.2](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.1...v1.2.0-dev.2) (2026-11-04)
+
+### 🐛 Bug Fixes
+
+* **phone:** preserve functional colors in pure AMOLED dark resources ([c703423](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/c703423597ec8ba39b2e01c01ce9ea6919d3d152))
+
 ## [1.2.0-dev.1](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.1.0...v1.2.0-dev.1) (2026-11-04)
 
 ### ✨ New Features
