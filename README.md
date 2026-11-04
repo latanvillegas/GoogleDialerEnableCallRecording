@@ -17,11 +17,11 @@ See [device testing and installation](docs/testing.md) for signing, privileged p
 ## Available patches
 
 <!-- PATCHES_START EXPANDED -->
-**[Add to Morphe](https://morphe.software/add-source?github=balu100/GoogleDialerEnableCallRecording)**
+**[Add to Morphe](https://morphe.software/add-source?github=latanvillegas/GoogleDialerEnableCallRecording)**
 
-> **[v1.1.0](https://github.com/balu100/GoogleDialerEnableCallRecording/releases/tag/v1.1.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;2 patches total
+> **[v1.2.0-dev.1](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/tag/v1.2.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;3 patches total
 <details open>
-<summary>Google Phone&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<summary>Google Phone&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
 **Supported versions:**
@@ -34,6 +34,7 @@ See [device testing and installation](docs/testing.md) for signing, privileged p
 |---|---|
 | Enable call recording | Enable the existing manual recording availability gate. Requires a working privileged call-audio backend. |
 | Handle rejected DroidGuard connection | Report a rejected DroidGuard broker connection as DEVELOPER_ERROR instead of crashing a renamed clone. Device testing required. |
+| Pure AMOLED - System default | Experimental: use pure black for night-mode surfaces while following Android's system theme. Leaves the light theme, call recording and DroidGuard unchanged. |
 
 </details>
 

@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.1.0",
+  "version": "1.2.0-dev.1",
   "patches": [
     {
       "name": "Enable call recording",
@@ -87,6 +87,37 @@
               "isExperimental": false,
               "minSdk": null,
               "description": "Experimental DroidGuard connection failure handling; not a call-audio permission fix."
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Pure AMOLED - System default",
+      "description": "Experimental: use pure black for night-mode surfaces while following Android's system theme. Leaves the light theme, call recording and DroidGuard unchanged.",
+      "default": false,
+      "category": null,
+      "compatiblePackages": [
+        {
+          "packageName": "com.google.android.dialer",
+          "name": "Google Phone",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": "#1A73E8",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "241.0.991235506",
+              "versionCodes": {
+                "ARM64_V8A": 20129558,
+                "ARMEABI_V7A": 20129558,
+                "X86_64": 20129558,
+                "X86": 20129558
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Experimental AMOLED resource patch; requires APK and device validation."
             }
           ]
         }

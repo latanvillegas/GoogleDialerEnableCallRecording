@@ -1,3 +1,9 @@
+## [1.2.0-dev.1](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.1.0...v1.2.0-dev.1) (2026-11-04)
+
+### ✨ New Features
+
+* **phone:** add isolated experimental pure AMOLED system theme patch ([4ae0539](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/4ae0539b483cc8942edca47a58d92d8f6c07814b))
+
 ## [1.1.0](https://github.com/balu100/GoogleDialerEnableCallRecording/compare/v1.0.0...v1.1.0) (2026-10-14)
 
 ### ✨ New Features
