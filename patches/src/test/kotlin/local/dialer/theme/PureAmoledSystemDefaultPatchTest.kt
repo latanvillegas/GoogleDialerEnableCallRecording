@@ -163,6 +163,78 @@ class PureAmoledSystemDefaultPatchTest {
         }
     }
 
+    @Test fun `sets black bottom and system navigation in inspected dark Dialer theme only`() {
+        val document = xml(
+            """
+            <resources>
+                <style name="Base.Theme.GoogleMaterial3.Dialer.Dark.NoActionBar">
+                    <item name="colorNavigationBar">?colorSurfaceContainerLow</item>
+                    <item name="colorOnSurface">#FFE8E8E8</item>
+                </style>
+                <style name="Base.Theme.GoogleMaterial3.Dialer.Light.NoActionBar">
+                    <item name="colorNavigationBar">?colorSurfaceContainerHigh</item>
+                    <item name="colorOnSurface">#FF202020</item>
+                </style>
+            </resources>
+            """.trimIndent(),
+        )
+
+        assertEquals(2, applyPureAmoledDarkDialerNavigation(document))
+        assertEquals(0, applyPureAmoledDarkDialerNavigation(document))
+
+        val dark = document.getElementsByTagName("style").item(0) as org.w3c.dom.Element
+        val light = document.getElementsByTagName("style").item(1) as org.w3c.dom.Element
+        assertTrue(dark.textContent.contains("#FF000000"))
+        val items = dark.getElementsByTagName("item")
+        assertEquals("#FF000000", items.item(0).textContent)
+        assertEquals("#FFE8E8E8", items.item(1).textContent)
+        assertEquals("#FF000000", items.item(2).textContent)
+
+        assertEquals("?colorSurfaceContainerHigh", light.getElementsByTagName("item").item(0).textContent)
+        assertEquals("#FF202020", light.getElementsByTagName("item").item(1).textContent)
+    }
+
+    @Test fun `night drawer and tab indicator override original material widget styles`() {
+        val base = xml(
+            """
+            <resources>
+                <style name="Widget.Material3.NavigationView" parent="@style/Widget.MaterialComponents.NavigationView">
+                    <item name="android:background">?colorSurfaceContainerLow</item>
+                    <item name="itemTextColor">@color/m3_navigation_item_text_color</item>
+                </style>
+                <style name="Widget.Material3Expressive.BottomNavigationView.ActiveIndicator" parent="@style/Widget.Material3.BottomNavigationView.ActiveIndicator">
+                    <item name="android:height">@dimen/m3_comp_nav_bar_item_vertical_active_indicator_height</item>
+                    <item name="android:color">?colorSecondaryContainer</item>
+                </style>
+            </resources>
+            """.trimIndent(),
+        )
+        val night = xml(
+            """
+            <resources>
+                <style name="Theme.GoogleMaterial3.DayNight" parent="@style/Theme.GoogleMaterial3.Dark" />
+            </resources>
+            """.trimIndent(),
+        )
+
+        assertEquals(2, installPureAmoledNightWidgetOverrides(base, night))
+        assertEquals(0, installPureAmoledNightWidgetOverrides(base, night))
+        val nightWidgets = night.getElementsByTagName("style")
+        val drawer = nightWidgets.item(1) as org.w3c.dom.Element
+        val indicator = nightWidgets.item(2) as org.w3c.dom.Element
+        assertEquals("Widget.Material3.NavigationView", drawer.getAttribute("name"))
+        assertEquals("#FF000000", drawer.getElementsByTagName("item").item(0).textContent)
+        assertEquals("@color/m3_navigation_item_text_color", drawer.getElementsByTagName("item").item(1).textContent)
+        assertEquals("Widget.Material3Expressive.BottomNavigationView.ActiveIndicator", indicator.getAttribute("name"))
+        assertEquals("#FF262626", indicator.getElementsByTagName("item").item(1).textContent)
+
+        val sourceWidgets = base.getElementsByTagName("style")
+        val sourceDrawer = sourceWidgets.item(0) as org.w3c.dom.Element
+        val sourceIndicator = sourceWidgets.item(1) as org.w3c.dom.Element
+        assertEquals("?colorSurfaceContainerLow", sourceDrawer.getElementsByTagName("item").item(0).textContent)
+        assertEquals("?colorSecondaryContainer", sourceIndicator.getElementsByTagName("item").item(1).textContent)
+    }
+
     @Test fun `recolors night theme backgrounds without changing controls`() {
         val doc = xml(
             """

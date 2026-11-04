@@ -151,10 +151,159 @@ internal fun applyPureAmoledToExplicitDarkColors(document: Document): Int {
     return changes
 }
 
+
+/**
+ * APK evidence (Google Phone 241):
+ * - layout/drawer_main_fragment*.xml uses ?colorNavigationBar for bottom navigation
+ * - Base.Theme.GoogleMaterial3.Dialer.Dark.NoActionBar defines colorNavigationBar
+ * - Widget.Material3.NavigationView has ?colorSurfaceContainerLow background
+ * - Widget.Material3Expressive.BottomNavigationView.ActiveIndicator is
+ *   colored by ?colorSecondaryContainer.
+ *
+ * Patch only the dark Dialer theme and night-specific widget variants.
+ * Replicating existing widget declarations under values-night preserves their
+ * resource IDs, default-day declarations, and other widget attributes.
+ */
+private data class NightWidgetOverride(
+    val name: String,
+    val attribute: String,
+    val expectedValue: String,
+    val amoledValue: String,
+)
+
+private val nightWidgetOverrides = listOf(
+    NightWidgetOverride(
+        "Widget.Material3.NavigationView",
+        "android:background",
+        "?colorSurfaceContainerLow",
+        BLACK,
+    ),
+    NightWidgetOverride(
+        "Widget.Material3Expressive.BottomNavigationView.ActiveIndicator",
+        "android:color",
+        "?colorSecondaryContainer",
+        "#FF262626",
+    ),
+)
+
+private fun namedStyle(root: Element, name: String): Element? {
+    val children = root.childNodes
+    var result: Element? = null
+    for (index in 0 until children.length) {
+        val style = children.item(index) as? Element ?: continue
+        if (style.tagName != "style" || style.getAttribute("name") != name) continue
+        if (result != null) throw PatchException("Pure AMOLED: duplicate style $name")
+        result = style
+    }
+    return result
+}
+
+private fun styleItem(style: Element, attribute: String): Element? {
+    val children = style.childNodes
+    var result: Element? = null
+    for (index in 0 until children.length) {
+        val item = children.item(index) as? Element ?: continue
+        if (item.tagName != "item" || item.getAttribute("name") != attribute) continue
+        if (result != null) {
+            throw PatchException("Pure AMOLED: duplicate $attribute in ${style.getAttribute("name")}")
+        }
+        result = item
+    }
+    return result
+}
+
+internal fun applyPureAmoledDarkDialerNavigation(document: Document): Int {
+    val root = document.documentElement
+    if (root.tagName != "resources") {
+        throw PatchException("Pure AMOLED: unexpected styles XML root ${root.tagName}")
+    }
+
+    val darkStyle = namedStyle(root, "Base.Theme.GoogleMaterial3.Dialer.Dark.NoActionBar")
+        ?: throw PatchException("Pure AMOLED: inspected dark Dialer theme is missing")
+    if (namedStyle(root, "Base.Theme.GoogleMaterial3.Dialer.Light.NoActionBar") == null) {
+        throw PatchException("Pure AMOLED: inspected light Dialer theme is missing")
+    }
+
+    val background = styleItem(darkStyle, "colorNavigationBar")
+        ?: throw PatchException("Pure AMOLED: dark colorNavigationBar is missing")
+    val original = background.textContent.trim()
+    if (original != "?colorSurfaceContainerLow" && !original.equals(BLACK, true)) {
+        throw PatchException("Pure AMOLED: unexpected dark colorNavigationBar=$original")
+    }
+
+    var changes = 0
+    if (!original.equals(BLACK, true)) {
+        background.textContent = BLACK
+        changes++
+    }
+
+    val systemNavigation = styleItem(darkStyle, "android:navigationBarColor")
+    if (systemNavigation == null) {
+        val item = document.createElement("item")
+        item.setAttribute("name", "android:navigationBarColor")
+        item.textContent = BLACK
+        darkStyle.appendChild(item)
+        changes++
+    } else {
+        val previous = systemNavigation.textContent.trim()
+        if (previous != "@android:color/transparent" &&
+            previous != "?colorNavigationBar" &&
+            !previous.equals(BLACK, true)
+        ) {
+            throw PatchException("Pure AMOLED: unexpected system navigationBarColor=$previous")
+        }
+        if (!previous.equals(BLACK, true)) {
+            systemNavigation.textContent = BLACK
+            changes++
+        }
+    }
+    return changes
+}
+
+internal fun installPureAmoledNightWidgetOverrides(
+    sourceStyles: Document,
+    nightStyles: Document,
+): Int {
+    val sourceRoot = sourceStyles.documentElement
+    val nightRoot = nightStyles.documentElement
+    if (sourceRoot.tagName != "resources" || nightRoot.tagName != "resources") {
+        throw PatchException("Pure AMOLED: unexpected widget styles XML root")
+    }
+
+    var changes = 0
+    for (override in nightWidgetOverrides) {
+        val sourceStyle = namedStyle(sourceRoot, override.name)
+            ?: throw PatchException("Pure AMOLED: inspected widget style missing: ${override.name}")
+        val sourceItem = styleItem(sourceStyle, override.attribute)
+            ?: throw PatchException("Pure AMOLED: widget attribute missing: ${override.name}")
+
+        if (sourceItem.textContent.trim() != override.expectedValue) {
+            throw PatchException("Pure AMOLED: source widget changed: ${override.name}")
+        }
+
+        val existing = namedStyle(nightRoot, override.name)
+        if (existing != null) {
+            val value = styleItem(existing, override.attribute)?.textContent?.trim()
+            if (value != override.amoledValue) {
+                throw PatchException("Pure AMOLED: conflicting night widget override: ${override.name}")
+            }
+            continue
+        }
+
+        val nightStyle = nightStyles.importNode(sourceStyle, true) as Element
+        val nightItem = styleItem(nightStyle, override.attribute)
+            ?: throw PatchException("Pure AMOLED: imported widget attribute missing")
+        nightItem.textContent = override.amoledValue
+        nightRoot.appendChild(nightStyle)
+        changes++
+    }
+    return changes
+}
+
 @Suppress("unused")
 val pureAmoledSystemDefaultPatch = resourcePatch(
     name = "Pure AMOLED - System default",
-    description = "Experimental: pure black on night-qualified surfaces and explicitly dark Material3 palettes while following Android's system theme. Light colors, call recording and DroidGuard unchanged.",
+    description = "Experimental: system-following pure AMOLED surfaces, drawer and bottom navigation; neutral selected-tab indicator in night mode. Light mode, call recording and DroidGuard unchanged.",
     default = false,
 ) {
     compatibleWith(
@@ -225,7 +374,22 @@ val pureAmoledSystemDefaultPatch = resourcePatch(
             }
         }
 
-        if (changedColors + changedStyles + changedDarkPalettes == 0) {
+        // The source resources show the actual drawer and bottom-nav style chain.
+        // The dark theme attribute fixes the navigation container and system nav bar.
+        // Two qualifier-specific widget variants fix the drawer and the selected
+        // tab indicator; the original day styles are not touched.
+        var changedNavigation = 0
+        document("res/values/styles.xml").use { baseStyles ->
+            changedNavigation += applyPureAmoledDarkDialerNavigation(baseStyles)
+            document("res/values-night/styles.xml").use { nightStyles ->
+                changedNavigation += installPureAmoledNightWidgetOverrides(
+                    baseStyles,
+                    nightStyles,
+                )
+            }
+        }
+
+        if (changedColors + changedStyles + changedDarkPalettes + changedNavigation == 0) {
             throw PatchException(
                 "Pure AMOLED: no verified dark surface resources found; " +
                     "the APK needs resource reconnaissance before theme modification",
@@ -234,7 +398,8 @@ val pureAmoledSystemDefaultPatch = resourcePatch(
 
         Logger.getLogger("LocalGooglePhone.PureAmoled").info(
             "Pure AMOLED: night surfaces=$changedColors, night styles=$changedStyles, " +
-                "named dark palettes=$changedDarkPalettes; light resources and both bytecode patches untouched",
+                "named dark palettes=$changedDarkPalettes, dark navigation=$changedNavigation; " +
+                "day mode and both existing bytecode patches untouched",
         )
     }
 }
