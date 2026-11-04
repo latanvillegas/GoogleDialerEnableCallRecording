@@ -1,3 +1,10 @@
+## [1.2.0-dev.4](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.3...v1.2.0-dev.4) (2026-11-04)
+
+### 🐛 Bug Fixes
+
+* **phone:** correct Kotlin identifier in AMOLED night widget overlay ([088115d](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/088115da3649307bc04776a025745fad2fc4c7ab))
+* **phone:** polish pure AMOLED drawer and expressive navigation in night mode ([3cd312b](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/3cd312b9887c670cfac257ce9ec3e415458448bc)), closes [#262626](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/issues/262626)
+
 ## [1.2.0-dev.3](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.2...v1.2.0-dev.3) (2026-11-04)
 
 ### ✨ New Features
