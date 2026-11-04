@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.2.0-dev.5",
+  "version": "1.2.0-dev.6",
   "patches": [
     {
       "name": "Enable call recording",
@@ -95,7 +95,7 @@
     },
     {
       "name": "Pure AMOLED - System default",
-      "description": "Experimental: system-following pure AMOLED surfaces, drawer and bottom navigation; neutral selected-tab indicator in night mode. Light mode, call recording and DroidGuard unchanged.",
+      "description": "Experimental: system-following pure black main surfaces, drawer, and bottom navigation via night-only layout overlays; neutral active-tab indicator. Light mode, call recording and DroidGuard unchanged.",
       "default": false,
       "category": null,
       "compatiblePackages": [

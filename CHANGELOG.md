@@ -1,3 +1,9 @@
+## [1.2.0-dev.6](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.5...v1.2.0-dev.6) (2026-11-04)
+
+### 🐛 Bug Fixes
+
+* **phone:** make night main navigation surfaces AMOLED black via resource overlays ([64214c0](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/64214c07751f38d33799c724417ee7b18852db29))
+
 ## [1.2.0-dev.5](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.4...v1.2.0-dev.5) (2026-11-04)
 
 ### 🐛 Bug Fixes
