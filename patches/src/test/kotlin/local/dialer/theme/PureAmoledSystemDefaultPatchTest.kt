@@ -33,6 +33,68 @@ class PureAmoledSystemDefaultPatchTest {
         assertEquals("#FF448AFF", colors.item(4).textContent)
     }
 
+    @Test fun `preserves functional colors from inspected Google Phone 241 APK`() {
+        val protected = listOf(
+            "bam_chronometer_background_color",
+            "banner_error_background_color",
+            "banner_promo_background_color",
+            "banner_success_background_color",
+            "banner_warn_background_color",
+            "contact_checker_card_background_color",
+            "preview_branding_background",
+            "preview_label_background_color",
+            "settings_banner_background_color",
+            "sud_accessibility_button_background_color",
+            "survey_button_background_color",
+            "sud_system_button_surface",
+        )
+        protected.forEach { name ->
+            assertFalse(isAmoledSurfaceName(name), "Must preserve functional color: $name")
+        }
+
+        val neutral = listOf(
+            "bam_center_fragment_background",
+            "settingslib_materialColorSurfaceContainer",
+            "settingslib_materialColorSurfaceContainerHigh",
+            "settingslib_materialColorSurfaceContainerHighest",
+            "settingslib_materialColorSurfaceVariant",
+            "settingslib_colorSurfaceVariant",
+            "settingslib_dialog_background",
+            "settingslib_surface_dark",
+            "sud_color_surface_bright",
+            "sud_color_surface_container",
+            "sud_color_surface_container_high",
+            "sud_system_background_surface",
+            "sud_system_surface",
+            "google_marterial_dialog_background_color",
+            "survey_surface_color",
+        )
+        neutral.forEach { name ->
+            assertTrue(isAmoledSurfaceName(name), "Must allow neutral surface: $name")
+        }
+
+        val doc = xml(
+            """
+            <resources>
+                <color name="banner_error_background_color">@color/google_red900</color>
+                <color name="banner_success_background_color">@color/google_green900</color>
+                <color name="settingslib_materialColorSurfaceContainer">#1f1f1f</color>
+                <color name="sud_color_surface_container">@color/sud_system_surface_container_dark</color>
+                <color name="sud_accessibility_button_background_color">@color/sud_system_secondary_container_dark</color>
+                <color name="survey_button_background_color">@color/google_grey200</color>
+            </resources>
+            """.trimIndent(),
+        )
+        assertEquals(2, applyPureAmoledToNightDocument(doc, styles = false))
+        val colors = doc.getElementsByTagName("color")
+        assertEquals("@color/google_red900", colors.item(0).textContent)
+        assertEquals("@color/google_green900", colors.item(1).textContent)
+        assertEquals("#FF000000", colors.item(2).textContent)
+        assertEquals("#FF000000", colors.item(3).textContent)
+        assertEquals("@color/sud_system_secondary_container_dark", colors.item(4).textContent)
+        assertEquals("@color/google_grey200", colors.item(5).textContent)
+    }
+
     @Test fun `recolors night theme backgrounds without changing controls`() {
         val doc = xml(
             """

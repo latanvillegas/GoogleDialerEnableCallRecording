@@ -12,8 +12,10 @@ import org.w3c.dom.Element
 private const val BLACK = "#FF000000"
 
 /**
- * Only semantic surfaces are eligible. Foreground and interaction colors are
- * never recolored: forcing those to black would make the dialer unreadable.
+ * Only neutral night surfaces are eligible. Preserve functional colors such as
+ * error/success/warning banners, branded previews, accessibility controls and
+ * buttons; turning those black would erase their purpose and contrast.
+ * Foreground and interaction colors must remain unchanged.
  */
 internal fun isAmoledSurfaceName(resourceName: String): Boolean {
     val words = resourceName
@@ -29,6 +31,9 @@ internal fun isAmoledSurfaceName(resourceName: String): Boolean {
         "border", "divider", "stroke", "tint", "ripple", "highlight",
         "accent", "inverse", "shadow", "elevation", "state", "pressed",
         "selected", "checked", "focus", "focused", "disabled", "dim",
+        "banner", "error", "success", "warn", "warning", "promo",
+        "brand", "branding", "preview", "checker", "chronometer",
+        "button", "accessibility",
     )
     return words.none { it in excluded }
 }
