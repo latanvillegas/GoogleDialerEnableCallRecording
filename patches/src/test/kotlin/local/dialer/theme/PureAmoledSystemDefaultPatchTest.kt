@@ -34,7 +34,7 @@ class PureAmoledSystemDefaultPatchTest {
     }
 
     @Test fun `preserves functional colors from inspected Google Phone 241 APK`() {
-        val protected = listOf(
+        val protectedColors = listOf(
             "bam_chronometer_background_color",
             "banner_error_background_color",
             "banner_promo_background_color",
@@ -48,7 +48,7 @@ class PureAmoledSystemDefaultPatchTest {
             "survey_button_background_color",
             "sud_system_button_surface",
         )
-        protected.forEach { name ->
+        protectedColors.forEach { name ->
             assertFalse(isAmoledSurfaceName(name), "Must preserve functional color: $name")
         }
 
