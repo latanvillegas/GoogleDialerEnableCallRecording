@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.2.0-dev.2",
+  "version": "1.2.0-dev.3",
   "patches": [
     {
       "name": "Enable call recording",
@@ -95,7 +95,7 @@
     },
     {
       "name": "Pure AMOLED - System default",
-      "description": "Experimental: use pure black for night-mode surfaces while following Android's system theme. Leaves the light theme, call recording and DroidGuard unchanged.",
+      "description": "Experimental: pure black on night-qualified surfaces and explicitly dark Material3 palettes while following Android's system theme. Light colors, call recording and DroidGuard unchanged.",
       "default": false,
       "category": null,
       "compatiblePackages": [

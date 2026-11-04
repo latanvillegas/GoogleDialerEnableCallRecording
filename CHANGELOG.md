@@ -1,3 +1,9 @@
+## [1.2.0-dev.3](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.2...v1.2.0-dev.3) (2026-11-04)
+
+### ✨ New Features
+
+* **phone:** cover inspected dark Material3 palette aliases for pure AMOLED ([94599da](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/94599dacc6200c59f07e683c45ddf8ae2f04777c))
+
 ## [1.2.0-dev.2](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.1...v1.2.0-dev.2) (2026-11-04)
 
 ### 🐛 Bug Fixes
