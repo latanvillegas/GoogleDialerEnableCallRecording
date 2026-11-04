@@ -271,29 +271,29 @@ internal fun installPureAmoledNightWidgetOverrides(
     }
 
     var changes = 0
-    for (override in nightWidgetOverrides) {
-        val sourceStyle = namedStyle(sourceRoot, override.name)
-            ?: throw PatchException("Pure AMOLED: inspected widget style missing: ${override.name}")
-        val sourceItem = styleItem(sourceStyle, override.attribute)
-            ?: throw PatchException("Pure AMOLED: widget attribute missing: ${override.name}")
+    for (rule in nightWidgetOverrides) {
+        val sourceStyle = namedStyle(sourceRoot, rule.name)
+            ?: throw PatchException("Pure AMOLED: inspected widget style missing: ${rule.name}")
+        val sourceItem = styleItem(sourceStyle, rule.attribute)
+            ?: throw PatchException("Pure AMOLED: widget attribute missing: ${rule.name}")
 
-        if (sourceItem.textContent.trim() != override.expectedValue) {
-            throw PatchException("Pure AMOLED: source widget changed: ${override.name}")
+        if (sourceItem.textContent.trim() != rule.expectedValue) {
+            throw PatchException("Pure AMOLED: source widget changed: ${rule.name}")
         }
 
-        val existing = namedStyle(nightRoot, override.name)
+        val existing = namedStyle(nightRoot, rule.name)
         if (existing != null) {
-            val value = styleItem(existing, override.attribute)?.textContent?.trim()
-            if (value != override.amoledValue) {
-                throw PatchException("Pure AMOLED: conflicting night widget override: ${override.name}")
+            val value = styleItem(existing, rule.attribute)?.textContent?.trim()
+            if (value != rule.amoledValue) {
+                throw PatchException("Pure AMOLED: conflicting night widget override: ${rule.name}")
             }
             continue
         }
 
         val nightStyle = nightStyles.importNode(sourceStyle, true) as Element
-        val nightItem = styleItem(nightStyle, override.attribute)
+        val nightItem = styleItem(nightStyle, rule.attribute)
             ?: throw PatchException("Pure AMOLED: imported widget attribute missing")
-        nightItem.textContent = override.amoledValue
+        nightItem.textContent = rule.amoledValue
         nightRoot.appendChild(nightStyle)
         changes++
     }
