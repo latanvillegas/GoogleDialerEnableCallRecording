@@ -38,6 +38,30 @@ internal fun isAmoledSurfaceName(resourceName: String): Boolean {
     return words.none { it in excluded }
 }
 
+/**
+ * The inspected Google Phone 241 APK also has explicitly dark Material3
+ * palettes in unqualified values/colors.xml and API-qualified values-v31.
+ * They are referenced by dark styles; light palettes in the same files are
+ * never changed. The allowlist is derived from inspected resource names.
+ */
+internal fun isExplicitDarkAmoledColor(resourceName: String): Boolean {
+    val name = resourceName.lowercase(Locale.ROOT)
+    val darkPalette =
+        name.startsWith("google_dark_default_color_") ||
+            name.startsWith("gm3_dark_default_color_") ||
+            name.startsWith("gm3_sys_color_dynamic_dark_") ||
+            name.startsWith("m3_sys_color_dynamic_dark_") ||
+            name == "background_material_dark" ||
+            name == "google_marterial_color_surface_dark"
+
+    if (!darkPalette) return false
+
+    // "surface_dim" is a background surface, not a foreground dimming overlay.
+    // All other exclusions, notably on_surface and inverse_surface, still apply.
+    val normalized = resourceName.replace(Regex("_surface_dim$", RegexOption.IGNORE_CASE), "_surface")
+    return isAmoledSurfaceName(normalized)
+}
+
 internal fun isAmoledThemeItem(attributeName: String): Boolean = attributeName in setOf(
     "android:windowBackground",
     "android:colorBackground",
@@ -61,7 +85,7 @@ private fun isColorValue(value: String): Boolean =
         value.startsWith("?android:attr/")
 
 /**
- * Modifies only an explicitly night-qualified XML resource document. The
+ * Modifies only explicitly night-qualified XML resource documents. The
  * Android day/night selector and Phone's preference logic are not changed.
  */
 internal fun applyPureAmoledToNightDocument(document: Document, styles: Boolean): Int {
@@ -101,10 +125,36 @@ internal fun applyPureAmoledToNightDocument(document: Document, styles: Boolean)
     return changes
 }
 
+/**
+ * Only explicitly dark-named colors in default and API-qualified values
+ * directories are eligible. No styles or night/day selection are modified.
+ */
+internal fun applyPureAmoledToExplicitDarkColors(document: Document): Int {
+    val root = document.documentElement
+    if (root.tagName != "resources") {
+        throw PatchException("Pure AMOLED: unexpected XML root ${root.tagName}")
+    }
+
+    var changes = 0
+    val nodes = root.childNodes
+    for (index in 0 until nodes.length) {
+        val element = nodes.item(index) as? Element ?: continue
+        val isColor = element.tagName == "color" ||
+            (element.tagName == "item" && element.getAttribute("type") == "color")
+        if (!isColor || !isExplicitDarkAmoledColor(element.getAttribute("name"))) continue
+
+        val old = element.textContent.trim()
+        if (!isColorValue(old) || old.equals(BLACK, ignoreCase = true)) continue
+        element.textContent = BLACK
+        changes++
+    }
+    return changes
+}
+
 @Suppress("unused")
 val pureAmoledSystemDefaultPatch = resourcePatch(
     name = "Pure AMOLED - System default",
-    description = "Experimental: use pure black for night-mode surfaces while following Android's system theme. Leaves the light theme, call recording and DroidGuard unchanged.",
+    description = "Experimental: pure black on night-qualified surfaces and explicitly dark Material3 palettes while following Android's system theme. Light colors, call recording and DroidGuard unchanged.",
     default = false,
 ) {
     compatibleWith(
@@ -154,16 +204,37 @@ val pureAmoledSystemDefaultPatch = resourcePatch(
             }
         }
 
-        if (changedColors + changedStyles == 0) {
+        // Resource names confirmed in the inspected APK:
+        // values-v31/colors.xml: gm3_sys_color_dynamic_dark_* and m3_*_dark_*
+        // values/styles.xml: dark themes reference *_dark_default_color_*.
+        // Restrict unqualified resources to explicitly dark palette names.
+        val apiValueDirectories = resourceDirectory.listFiles()
+            ?.filter {
+                it.isDirectory &&
+                    (it.name == "values" || it.name.matches(Regex("values-v[0-9]+")))
+            }
+            ?.sortedBy { it.name }
+            .orEmpty()
+
+        var changedDarkPalettes = 0
+        for (directory in apiValueDirectories) {
+            val colors = directory.resolve("colors.xml")
+            if (!colors.isFile) continue
+            document("res/${directory.name}/colors.xml").use { document ->
+                changedDarkPalettes += applyPureAmoledToExplicitDarkColors(document)
+            }
+        }
+
+        if (changedColors + changedStyles + changedDarkPalettes == 0) {
             throw PatchException(
-                "Pure AMOLED: no verified night surface resources found; " +
+                "Pure AMOLED: no verified dark surface resources found; " +
                     "the APK needs resource reconnaissance before theme modification",
             )
         }
 
         Logger.getLogger("LocalGooglePhone.PureAmoled").info(
-            "Pure AMOLED: dark surfaces=$changedColors, night style items=$changedStyles; " +
-                "day resources and both existing bytecode patches are untouched",
+            "Pure AMOLED: night surfaces=$changedColors, night styles=$changedStyles, " +
+                "named dark palettes=$changedDarkPalettes; light resources and both bytecode patches untouched",
         )
     }
 }

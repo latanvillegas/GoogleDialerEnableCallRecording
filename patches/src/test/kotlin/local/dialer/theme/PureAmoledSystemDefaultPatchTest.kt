@@ -95,6 +95,74 @@ class PureAmoledSystemDefaultPatchTest {
         assertEquals("@color/google_grey200", colors.item(5).textContent)
     }
 
+    @Test fun `recolors inspected Google Phone 241 dark aliases in default and API values`() {
+        val doc = xml(
+            """
+            <resources>
+                <color name="gm3_sys_color_dynamic_dark_background">@color/gm3_ref_palette_dynamic_neutral_variant6</color>
+                <color name="gm3_sys_color_dynamic_dark_surface_container_high">@color/gm3_ref_palette_dynamic_neutral_variant17</color>
+                <color name="gm3_sys_color_dynamic_dark_surface_dim">@color/gm3_ref_palette_dynamic_neutral_variant6</color>
+                <color name="gm3_sys_color_dynamic_dark_on_surface">@color/gm3_ref_palette_dynamic_neutral90</color>
+                <color name="gm3_sys_color_dynamic_dark_inverse_surface">@color/gm3_ref_palette_dynamic_neutral90</color>
+                <color name="gm3_sys_color_dynamic_light_background">@color/gm3_ref_palette_dynamic_neutral_variant98</color>
+                <color name="m3_sys_color_dynamic_dark_surface">@color/m3_ref_palette_dynamic_neutral_variant6</color>
+                <color name="google_dark_default_color_background">#FF191919</color>
+                <color name="gm3_dark_default_color_surface_container">#FF222222</color>
+                <color name="background_material_dark">#FF101010</color>
+                <color name="google_marterial_color_surface_dark">@android:color/system_neutral1_800</color>
+                <color name="google_marterial_color_surface_light">@android:color/system_neutral1_10</color>
+                <color name="gm3_sys_color_dynamic_dark_surface_variant">@color/gm3_ref_palette_dynamic_neutral_variant30</color>
+                <color name="gm3_sys_color_dynamic_dark_surface_tint">@color/gm3_ref_palette_dynamic_primary80</color>
+                <color name="dialer_end_call_button_color">@color/google_red400</color>
+            </resources>
+            """.trimIndent(),
+        )
+        assertEquals(9, applyPureAmoledToExplicitDarkColors(doc))
+        val colors = doc.getElementsByTagName("color")
+        for (index in listOf(0, 1, 2, 6, 7, 8, 9, 10, 12)) {
+            assertEquals("#FF000000", colors.item(index).textContent, "Dark background index $index")
+        }
+        assertEquals("@color/gm3_ref_palette_dynamic_neutral90", colors.item(3).textContent)
+        assertEquals("@color/gm3_ref_palette_dynamic_neutral90", colors.item(4).textContent)
+        assertEquals("@color/gm3_ref_palette_dynamic_neutral_variant98", colors.item(5).textContent)
+        assertEquals("@android:color/system_neutral1_10", colors.item(11).textContent)
+        assertEquals("@color/gm3_ref_palette_dynamic_primary80", colors.item(13).textContent)
+        assertEquals("@color/google_red400", colors.item(14).textContent)
+        assertEquals(0, applyPureAmoledToExplicitDarkColors(doc), "Must be idempotent")
+    }
+
+    @Test fun `dark palette selectors preserve system light aliases and interaction colors`() {
+        val selected = listOf(
+            "gm3_sys_color_dynamic_dark_background",
+            "gm3_sys_color_dynamic_dark_surface_container",
+            "m3_sys_color_dynamic_dark_surface",
+            "gm3_dark_default_color_background",
+            "google_dark_default_color_surface",
+            "background_material_dark",
+            "google_marterial_color_surface_dark",
+        )
+        selected.forEach { name ->
+            assertTrue(isExplicitDarkAmoledColor(name), "Must recolor dark surface: $name")
+        }
+
+        val preserved = listOf(
+            "gm3_sys_color_dynamic_light_background",
+            "m3_sys_color_dynamic_light_surface",
+            "google_default_color_background",
+            "gm3_default_color_surface",
+            "gm3_sys_color_dynamic_dark_on_surface",
+            "gm3_sys_color_dynamic_dark_inverse_surface",
+            "gm3_sys_color_dynamic_dark_surface_tint",
+            "gm3_sys_color_dynamic_dark_on_surface_state_content",
+            "dialer_call_green",
+            "dialer_end_call_button_color",
+            "banner_error_background_color",
+        )
+        preserved.forEach { name ->
+            assertFalse(isExplicitDarkAmoledColor(name), "Must preserve color: $name")
+        }
+    }
+
     @Test fun `recolors night theme backgrounds without changing controls`() {
         val doc = xml(
             """
