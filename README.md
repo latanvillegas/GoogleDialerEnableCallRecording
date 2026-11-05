@@ -19,7 +19,7 @@ See [device testing and installation](docs/testing.md) for signing, privileged p
 <!-- PATCHES_START EXPANDED -->
 **[Add to Morphe](https://morphe.software/add-source?github=latanvillegas/GoogleDialerEnableCallRecording)**
 
-> **[v1.2.0-dev.8](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/tag/v1.2.0-dev.8)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;4 patches total
+> **[v1.2.0-dev.9](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/tag/v1.2.0-dev.9)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;4 patches total
 <details open>
 <summary>Google Phone&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>

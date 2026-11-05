@@ -1,3 +1,9 @@
+## [1.2.0-dev.9](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.8...v1.2.0-dev.9) (2026-11-05)
+
+### ✨ New Features
+
+* **visual:** modular theme engines, palettes, media previews and portable profiles ([c390f85](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/c390f853206ef3f922adf7a577b3e17e708d6171))
+
 ## [1.2.0-dev.8](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.7...v1.2.0-dev.8) (2026-11-05)
 
 ### ✨ New Features
