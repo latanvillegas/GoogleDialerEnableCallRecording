@@ -1,3 +1,9 @@
+## [1.2.0-dev.11](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.10...v1.2.0-dev.11) (2026-11-05)
+
+### ✨ New Features
+
+* **visual:** stage typed call history color palettes and preview, gated pending adapter audit ([a54990a](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/a54990a7f3b85b924a4796e355a81fe51cb0e34d))
+
 ## [1.2.0-dev.10](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.9...v1.2.0-dev.10) (2026-11-05)
 
 ### ✨ New Features
