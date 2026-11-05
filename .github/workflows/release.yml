@@ -60,7 +60,18 @@ jobs:
       # Always verify compilation when semantic-release did not publish a release.
       # This covers non-main/dev branches, chore commits, docs commits, etc.
       - name: Verify project compiles
-        if: steps.release.outputs.new_release_published != 'true'
+        if: ${{ always() && steps.release.outputs.new_release_published != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew :patches:buildAndroid clean --no-daemon
+        run: ./gradlew :patches:buildAndroid --no-daemon
+
+      # Keep the tested .mpp available even when GitHub rejects semantic-release
+      # refs/notes. This is a CI artifact, not a public GitHub Release asset.
+      - name: Upload compiled patch bundle
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-phone-mpp-${{ github.run_id }}
+          path: patches/build/libs/patches-*.mpp
+          if-no-files-found: warn
+          retention-days: 30
