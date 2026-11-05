@@ -31,7 +31,7 @@ See [device testing and installation](docs/testing.md) for signing, privileged p
 
 | Patch | Description |
 |---|---|
-| Dialer Visual Customizer | Modular visual customization: dialpad palettes, portable profiles and opt-in experimental audio-call covers, muted video backgrounds and Xatu control colors. Native call functions and other patches remain untouched. |
+| Dialer Visual Customizer | Modular visual customization: AMOLED dialpad themes, opt-in in-call media/controls, and verified call-history row colors. Spam detection and actual history filtering remain native pending model validation. |
 | Enable call recording | Enable the existing manual recording availability gate. Requires a working privileged call-audio backend. |
 | Handle rejected DroidGuard connection | Report a rejected DroidGuard broker connection as DEVELOPER_ERROR instead of crashing a renamed clone. Device testing required. |
 | Pure AMOLED - System default | Experimental: night-only AMOLED surfaces with dark-theme tonal elevation disabled, black drawer/bottom bar, and neutral active indicator; light mode, call recording and DroidGuard unchanged. |

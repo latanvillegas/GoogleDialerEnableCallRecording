@@ -4,7 +4,7 @@
   "patches": [
     {
       "name": "Dialer Visual Customizer",
-      "description": "Modular visual customization: dialpad palettes, portable profiles and opt-in experimental audio-call covers, muted video backgrounds and Xatu control colors. Native call functions and other patches remain untouched.",
+      "description": "Modular visual customization: AMOLED dialpad themes, opt-in in-call media/controls, and verified call-history row colors. Spam detection and actual history filtering remain native pending model validation.",
       "default": false,
       "category": null,
       "compatiblePackages": [
