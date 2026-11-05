@@ -58,3 +58,59 @@ No se modifican grabación, DroidGuard ni Pure AMOLED. No se accede a contactos,
 registros de llamadas ni bases de datos del dispositivo durante el análisis.
 Las pruebas CI verifican construcción, **no sustituyen la prueba visual en
 el teléfono con Android 16**.
+
+## Auditoría de modelos de filtros (Google Phone 241)
+
+El ZIP del dispositivo `auditoria-modelos-historial-241.zip` confirmó las 19
+clases solicitadas y el SHA-256 de la APK analizada:
+`083e0fced1b4c61520a719f627fed97225edcd7f5bb8dadc49ef5ac015c2c051`.
+
+- El enum nativo `Lkdx;` contiene exactamente `ALL`, `MISSED`,
+  `CONTACTS`, `NON_SPAM`, `SPAM`, `CALL_RECORDING` y `CALL_NOTES`.
+- `Lkei;->a(Lkdx;Laodk;)Ljava/lang/Object;` interviene en la selección
+  del filtro, mediante coroutine.
+- `Lkzk;->j(Lkdx;)Lkdt;` resuelve el filtro desde un mapa o falla si
+  no existe; no debe invocarse con tipos inventados.
+- El reporte no prueba un campo de veredicto `SPAM` por cada fila, ni
+  expone una API para insertar filtros `INCOMING` o `OUTGOING` en ese enum.
+
+Por esa razón el cuarto parche **no altera la consulta ni los filtros
+nativos de Google Phone**. Sigue sin intentar identificar spam por el número
+o por la etiqueta visible.
+
+## Explorador local de historial y estadísticas reales
+
+Se agrega `CallHistoryExplorer` dentro de `Personalización visual →
+Historial de llamadas`. Al elegir «Abrir historial filtrado y estadísticas
+reales», utiliza el contrato público de Android
+`android.provider.CallLog.Calls.CONTENT_URI` exclusivamente en lectura:
+
+- Solo se ejecuta tras una acción explícita del usuario y con
+  `READ_CALL_LOG` ya autorizado. No solicita nuevos permisos.
+- Usa únicamente `TYPE`, `DATE`, `NUMBER` y `CACHED_NAME`.
+- Filtra las categorías documentadas `INCOMING`, `OUTGOING`, `MISSED`,
+  `REJECTED` y `BLOCKED`, además de «Todas».
+- Calcula estadísticas reales del máximo de **5.000 eventos recientes**,
+  e indica si existen más eventos no examinados. Muestra hasta **80 filas**
+  de la categoría seleccionada, manteniendo el orden de fecha descendente.
+- No combina entradas en grupos. Sus recuentos pueden diferir de los
+  grupos/conversaciones que muestra Google Phone en su pantalla principal.
+- Los nombres o números se conservan solamente en la memoria de este diálogo
+  durante su uso; no se persisten, exportan ni envían a la red.
+- La lectura se hace en un hilo de trabajo y se cancela al cerrar el diálogo.
+  Los errores de permiso o proveedor muestran un mensaje, sin modificar datos.
+- Spam se mantiene sin clasificar en este explorador hasta verificar el
+  veredicto explícito del modelo Google Phone.
+
+Esta funcionalidad cumple el filtrado de eventos **en una vista separada y
+de solo lectura**, no el filtrado del RecyclerView principal. Los colores
+sobre las filas del historial original se mantienen en el hook ya auditado
+`Lkit;->E(Laegg;Lkaw;Llb;I)V`, opt-in, sin modificaciones nuevas.
+
+### Validación pendiente
+
+CI compila el módulo Java y las pruebas del parche; la consulta local requiere
+prueba física de compatibilidad con el permiso `READ_CALL_LOG` del clon Morphe
+en Android 16. Un APK sin ese permiso seguirá mostrando un aviso y no consultará
+registros. Para habilitar el spam de Google Phone dentro del adaptador nativo
+aún necesitamos verificar el campo concreto que representa ese veredicto.

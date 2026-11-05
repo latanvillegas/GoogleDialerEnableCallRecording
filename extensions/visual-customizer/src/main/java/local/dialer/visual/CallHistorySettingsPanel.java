@@ -19,9 +19,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * Settings and preview for audited real-history row colorization.
- * Filtering/stats remain preview-only until native query/model contracts
- * (including spam verdict and pagination) are independently validated.
+ * Settings for audited real-history row colors. Native app filtering stays
+ * unchanged; CallHistoryExplorer supplies a separate read-only Android
+ * CallLog.Calls view with actual type filters and event counts.
  */
 public final class CallHistorySettingsPanel {
     private static final String[] PLACEMENT_LABELS = {
@@ -67,7 +67,8 @@ public final class CallHistorySettingsPanel {
         root.addView(text(
             "Colores en filas reales para recibidas, realizadas, perdidas, rechazadas y bloqueadas. "
             + "Spam conserva su estilo nativo hasta verificar su indicador explícito. "
-            + "Los filtros y las estadísticas siguen pendientes de integración con datos reales.",
+            + "Los filtros y recuentos reales están disponibles en el explorador independiente; "
+            + "no modifica los filtros nativos de Google Phone.",
             13, false));
 
         Switch enabled = new Switch(activity);
@@ -108,6 +109,20 @@ public final class CallHistorySettingsPanel {
         preview.setPadding(dp(10), dp(10), dp(10), dp(10));
         preview.setBackgroundColor(Color.BLACK);
         root.addView(preview);
+
+        root.addView(text("Historial real · consulta de solo lectura", 16, true));
+        root.addView(text(
+            "El explorador consulta los eventos individuales del proveedor Android "
+            + "(hasta 5.000 recientes), muestra los primeros 80 resultados y calcula "
+            + "recuentos por tipo. Requiere READ_CALL_LOG ya concedido. "
+            + "No cambia el historial principal, no guarda llamadas y no identifica "
+            + "spam sin una marca explícita verificada.", 12, false));
+        Button explorer = new Button(activity);
+        explorer.setAllCaps(false);
+        explorer.setText("Abrir historial filtrado y estadísticas reales");
+        explorer.setOnClickListener(view -> CallHistoryExplorer.show(activity));
+        root.addView(explorer, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
 
         Button restore = new Button(activity);
         restore.setAllCaps(false);
