@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-04T23:39:43",
-  "description": "## [1.2.0-dev.6](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.5...v1.2.0-dev.6) (2026-11-04)\n\n### 🐛 Bug Fixes\n\n* **phone:** make night main navigation surfaces AMOLED black via resource overlays ([64214c0](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/64214c07751f38d33799c724417ee7b18852db29))",
-  "download_url": "https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/download/v1.2.0-dev.6/patches-1.2.0-dev.6.mpp",
+  "created_at": "2026-11-05T02:14:52",
+  "description": "## [1.2.0-dev.7](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.6...v1.2.0-dev.7) (2026-11-05)\n\n### 🐛 Bug Fixes\n\n* **amoled:** prevent Material3 tonal elevation tint on dark navigation surfaces ([785051e](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/785051e331e2fc4f8d4c0c36cf82fcd88a268514))",
+  "download_url": "https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/download/v1.2.0-dev.7/patches-1.2.0-dev.7.mpp",
   "signature_download_url": "",
-  "version": "1.2.0-dev.6"
+  "version": "1.2.0-dev.7"
 }

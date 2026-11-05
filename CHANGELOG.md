@@ -1,3 +1,9 @@
+## [1.2.0-dev.7](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.6...v1.2.0-dev.7) (2026-11-05)
+
+### 🐛 Bug Fixes
+
+* **amoled:** prevent Material3 tonal elevation tint on dark navigation surfaces ([785051e](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/785051e331e2fc4f8d4c0c36cf82fcd88a268514))
+
 ## [1.2.0-dev.6](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.5...v1.2.0-dev.6) (2026-11-04)
 
 ### 🐛 Bug Fixes
