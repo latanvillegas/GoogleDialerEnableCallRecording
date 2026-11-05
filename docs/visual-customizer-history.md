@@ -1,70 +1,60 @@
-# Call History Colorization — Google Phone 241 (staged)
+# Historial de llamadas — Google Phone 241
 
-## Verified source evidence
+## Estado: coloración de filas reales integrada (experimental)
 
-The user's resource archive of Google Phone 241.0.991235506 contains:
+La auditoría del usuario `auditoria-historial-googlephone-241.zip` identifica:
 
-| Resource | Original resource ID |
-| --- | --- |
-| `layout/conversation_history_entry` | `0x7f0e00b5` |
-| `layout/conversation_history_entry_flippable` | `0x7f0e00b6` |
-| `layout/call_log_fragment_flippable` | `0x7f0e0076` |
-| `layout/call_log_fragment_flex_two_column` | `0x7f0e0075` |
-| `id/call_log_recycler_view` | `0x7f0b0155` |
-| `id/call_type_icon` | `0x7f0b0181` |
-| `id/secondary_text` | `0x7f0b062b` |
-| `id/primary_text` | `0x7f0b0576` |
-| `id/missed_call_count` | `0x7f0b04b5` |
+- `Lkit;` — adaptador, identificado como `com/android/dialer/calllog/ui/CallLogAdapter`.
+- `Lkit;->E(Laegg;Lkaw;Llb;I)V` — enlaza una fila de conversación; 16 registros, sin try blocks, un retorno.
+- `Lkjq;` — ViewHolder `ConversationHistoryViewHolder`.
+- `Lkjq;->E()Lkgn;` — modelo principal de la fila.
+- `Lkgn;->q:I` — tipo de llamada: la lógica nativa distingue `3` como perdida y `5` como rechazada.
+- `Llb;->a:Landroid/view/View;` — vista raíz del ViewHolder.
+- Recursos `id/call_type_icon=0x7f0b0181`, `id/secondary_text=0x7f0b062b`.
 
-These resources establish row view IDs. They DO NOT establish which obfuscated
-adapter method binds the model, nor the location of its spam flag.
+El parche se limita a Google Phone `241.0.991235506` / `20129558`. Antes de cada bind
+se restaura la tinta y el texto originales de una fila reciclada. Después del bind,
+el hook lee el tipo desde el modelo nativo y aplica el color mediante
+`CallHistoryBridge` y `CallHistoryRenderer`.
 
-## Implemented in the optional Visual Customizer extension
+## Estados de color
 
-- `CallTypeResolver`: public Android CallLog.Calls types, explicit spam flag,
-  unknown types preserve native rendering. Grouped row uses newest timestamp.
-- `CallColorPalette`: six customizable, independently persisted HEX values
-  and three placement choices; opt-in disabled by default.
-- `CallHistoryRenderer`: restores native icon and text styling on reuse,
-  colors only the verified icon/secondary-text IDs, optional side stripe
-  uses ViewOverlay and does not intercept touches.
-- `CallHistoryStats`: counts typed events in memory, with no persistence
-  of identities, phone numbers or individual call records.
-- `CallHistorySettingsPanel`: settings and a representative preview, with
-  a prominent warning that live history styling and filtering await DEX verification.
-- `PreferenceRepository`: recognizes and imports/exports history appearance
-  settings in schema 1; the existing global reset clears those settings.
+- Tipo 1, entrante contestada: menta.
+- Tipo 2, saliente: azul.
+- Tipo 3, perdida: coral.
+- Tipo 5, rechazada: violeta.
+- Tipo 6, bloqueada: gris.
+- Tipos desconocidos: sin modificación.
+- Spam: la paleta y la vista previa están preparadas, **pero el icono de spam
+  no se colorea en filas reales** hasta localizar un campo verificado que
+  distinga la marca de spam del tipo de llamada.
 
-## Explicitly not activated yet
+El modelo de agrupación usa el evento principal que Google Phone ya entrega
+a su propio ViewHolder. No se reordena el grupo ni se interpretan nombres,
+números, descripciones, avatares o flechas para inferir un tipo.
 
-- No injection into unknown adapter or group binding methods.
-- No live `RecyclerView` filtering or modification of the original call query.
-- No dashboard showing statistics derived from real calls.
-- No assumption that an unknown caller or a missed call is spam.
+## Preferencias y garantías
 
-The above functions require a new on-device read-only DEX audit using
-`inspeccionar_historial_googlephone_241.py` with the user's existing Termux
-and Apktool. Inspect *only bytecode* of the patched APK; the report excludes
-device contacts, call logs, and application databases.
+`CallHistorySettingsPanel` incorpora colores HEX, ubicación del color y
+vista previa. El cambio real permanece opt-in (desactivado por defecto);
+también respeta la preferencia de personalización exclusiva del modo oscuro.
 
-Required contracts before wiring:
+La restauración nativa ocurre antes de reutilizar filas para evitar fugas de
+tinta entre contactos, y el renderizador nunca cambia listeners ni controles
+de llamada. Si el hook o la vista difieren del contrato auditado, el parche
+aborta sin aplicar una mutación parcial.
 
-1. Exact row ViewHolder and native row-bind method (signature, register count,
-   try blocks and instruction positions).
-2. Exact source field or accessor of the most recent event type within grouped
-   rows, including type mapping and ordering.
-3. Explicit Google Phone spam verdict and blocked/rejected states; never infer
-   from avatar, text, direction arrow or caller number.
-4. Row reuse/rebinding lifecycle to restore native colors deterministically.
-5. Existing filter repository/query contract, and its behavior under pagination.
+## Funciones pendientes
 
-## Rollout and safety
+- **Clasificación visual explícita de spam**: se requiere la definición DEX
+  del veredicto de spam que realmente consume el modelo.
+- **Filtro de historial real**: exige verificar el repositorio y el contrato de
+  carga/paginación; el filtro existente afecta solo la vista previa.
+- **Estadísticas de llamadas reales**: exigen datos de eventos verificados,
+  no solo filas cargadas u observadas. `CallHistoryStats` aún no está
+  conectado a la fuente nativa.
 
-- The 3 existing patches `Enable call recording`,
-  `Handle rejected DroidGuard connection`, `Pure AMOLED - System default`
-  are not modified by this staged implementation.
-- The InCall and Dialpad hooks in the fourth patch are preserved.
-- No changes to call answering, rejecting, placing, blocking, recording, or
-  Telecom APIs.
-- A successful CI build does **not** constitute proof of history rendering.
-- Test on physical HyperOS/Android 16 only after an audited binding is added.
+No se modifican grabación, DroidGuard ni Pure AMOLED. No se accede a contactos,
+registros de llamadas ni bases de datos del dispositivo durante el análisis.
+Las pruebas CI verifican construcción, **no sustituyen la prueba visual en
+el teléfono con Android 16**.

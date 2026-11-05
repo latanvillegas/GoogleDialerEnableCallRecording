@@ -30,6 +30,11 @@ private const val VISUAL_ACTIVITY = "local.dialer.visual.VisualCustomizerActivit
 private const val VISUAL_ACTION = "local.dialer.visual.CONFIGURE"
 private const val VISUAL_HOOK =
     "Llocal/dialer/visual/VisualCustomizer;->apply(Landroid/view/View;)V"
+private const val CALL_LOG_ADAPTER = "Lkit;"
+private const val CALL_HISTORY_BEFORE =
+    "Llocal/dialer/visual/CallHistoryBridge;->onBeforeBind(Landroid/view/View;)V"
+private const val CALL_HISTORY_AFTER =
+    "Llocal/dialer/visual/CallHistoryBridge;->onAfterBind(Landroid/view/View;I)V"
 
 /**
  * The inspected res/xml/display_options_settings.xml is inflated by Lmjz;->aU.
@@ -139,7 +144,7 @@ private val visualCustomizerResourcesPatch = resourcePatch {
 @Suppress("unused")
 val dialerVisualCustomizerPatch = bytecodePatch(
     name = "Dialer Visual Customizer",
-    description = "Modular visual customization: dialpad palettes, portable profiles and opt-in experimental audio-call covers, muted video backgrounds and Xatu control colors. Native call functions and other patches remain untouched.",
+    description = "Modular visual customization: AMOLED dialpad themes, opt-in in-call media/controls, and verified call-history row colors. Spam detection and actual history filtering remain native pending model validation.",
     default = false,
 ) {
     compatibleWith(
@@ -238,5 +243,74 @@ val dialerVisualCustomizerPatch = bytecodePatch(
             it.name == "onPause" && it.parameterTypes.isEmpty()
         }
         pause.addInstruction(0, "invoke-static { p0 }, $IN_CALL_PAUSE")
+
+        // Google Phone 241: audited CallLogAdapter.kt binder
+        // Lkit;->E(Laegg;Lkaw;Llb;I)V, .locals 11 (16 total registers),
+        // precisely one return and no try blocks. The binder executes Lkjq.G()
+        // and ends by handing Llb.a back to the RecyclerView. Native model
+        // Lkjq.E() returns Lkgn, whose q:I is the existing call-type value.
+        // Never classify spam by name, avatar or screen text.
+        val adapterClass = classDefBy(CALL_LOG_ADAPTER)
+        val bind = adapterClass.methods.singleOrNull { candidate ->
+            candidate.name == "E" &&
+                candidate.returnType == "V" &&
+                candidate.parameterTypes.map { it.toString() } == listOf(
+                    "Laegg;", "Lkaw;", "Llb;", "I",
+                )
+        } ?: throw PatchException("Visual Customizer: missing audited history row binder")
+        val bindBody = bind.implementation
+            ?: throw PatchException("Visual Customizer: history binder has no implementation")
+        val nativeRowRefresh = bindBody.instructions.filterIsInstance<ReferenceInstruction>()
+            .mapNotNull { it.reference as? MethodReference }
+            .count {
+                it.definingClass == "Lkjq;" && it.name == "G" &&
+                    it.returnType == "V" && it.parameterTypes.isEmpty()
+            }
+        if (bindBody.registerCount != 16 ||
+            bindBody.tryBlocks.isNotEmpty() ||
+            bindBody.instructions.count { it.opcode == Opcode.RETURN_VOID } != 1 ||
+            bindBody.instructions.lastOrNull()?.opcode != Opcode.RETURN_VOID ||
+            nativeRowRefresh != 1
+        ) {
+            throw PatchException("Visual Customizer: history binder differs from audited DEX")
+        }
+        val rowHolder = classDefBy("Lkjq;")
+        val rowModelMethod = rowHolder.methods.singleOrNull {
+            it.name == "E" && it.returnType == "Lkgn;" && it.parameterTypes.isEmpty()
+        } ?: throw PatchException("Visual Customizer: audited row model accessor missing")
+        if (rowModelMethod.implementation == null ||
+            classDefBy("Lkgn;").fields.none { it.name == "q" && it.type == "I" } ||
+            classDefBy("Llb;").fields.none {
+                it.name == "a" && it.type == "Landroid/view/View;"
+            }
+        ) {
+            throw PatchException("Visual Customizer: call-type or row-root contract changed")
+        }
+
+        val mutableAdapter = mutableClassDefBy(adapterClass)
+        val rowBind = mutableAdapter.methods.single {
+            it.name == "E" && it.parameterTypes.map { p -> p.toString() } ==
+                listOf("Laegg;", "Lkaw;", "Llb;", "I")
+        }
+        val returnIndex = rowBind.implementation!!.instructions.indexOfLast {
+            it.opcode == Opcode.RETURN_VOID
+        }
+        // v0/v1 are local registers and dead at return. p3 is the verified
+        // holder argument; no register expansion and no Telecom logic changes.
+        rowBind.addInstructions(returnIndex, """
+            iget-object v0, p3, Llb;->a:Landroid/view/View;
+            move-object v1, p3
+            check-cast v1, Lkjq;
+            invoke-virtual {v1}, Lkjq;->E()Lkgn;
+            move-result-object v1
+            iget v1, v1, Lkgn;->q:I
+            invoke-static {v0, v1}, $CALL_HISTORY_AFTER
+        """.trimIndent())
+        // Restore any previous custom tint BEFORE the stock adapter rebinds
+        // the recycled holder. Otherwise color could leak between callers.
+        rowBind.addInstructions(0, """
+            iget-object v0, p3, Llb;->a:Landroid/view/View;
+            invoke-static {v0}, $CALL_HISTORY_BEFORE
+        """.trimIndent())
     }
 }

@@ -19,8 +19,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * Settings and live sample preview only. Real history rows, filters and
- * statistics remain untouched until their adapter/model DEX is verified.
+ * Settings and preview for audited real-history row colorization.
+ * Filtering/stats remain preview-only until native query/model contracts
+ * (including spam verdict and pagination) are independently validated.
  */
 public final class CallHistorySettingsPanel {
     private static final String[] PLACEMENT_LABELS = {
@@ -64,12 +65,13 @@ public final class CallHistorySettingsPanel {
     private void build(LinearLayout root) {
         root.addView(text("Historial de llamadas · personalización", 19, true));
         root.addView(text(
-            "Configuración y vista previa. La aplicación de colores y filtros a llamadas reales "
-            + "requiere validar el adaptador DEX del historial. Por seguridad, aún no está enlazado.",
+            "Colores en filas reales para recibidas, realizadas, perdidas, rechazadas y bloqueadas. "
+            + "Spam conserva su estilo nativo hasta verificar su indicador explícito. "
+            + "Los filtros y las estadísticas siguen pendientes de integración con datos reales.",
             13, false));
 
         Switch enabled = new Switch(activity);
-        enabled.setText("Activar colores cuando se valide el adaptador");
+        enabled.setText("Activar colores del historial real (experimental)");
         enabled.setTextColor(foreground);
         enabled.setChecked(CallColorPalette.enabled(activity));
         enabled.setOnCheckedChangeListener((button, checked) ->
@@ -89,6 +91,8 @@ public final class CallHistorySettingsPanel {
         root.addView(labels);
 
         root.addView(text("Colores por tipo · toca para introducir HEX", 15, true));
+        root.addView(text("El color Spam está preparado, pero no se aplica en filas reales " +
+            "hasta identificar la marca explícita del modelo.", 12, false));
         for (CallTypeResolver.Kind kind : CallColorPalette.supported()) {
             Button button = new Button(activity);
             button.setAllCaps(false);
