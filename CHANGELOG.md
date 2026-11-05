@@ -1,3 +1,9 @@
+## [1.2.0-dev.8](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.7...v1.2.0-dev.8) (2026-11-05)
+
+### ✨ New Features
+
+* **visual:** add configurable dialpad palettes and native settings screen ([aef15d2](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/aef15d2409382f8c6f229fe07ebe2e4b27ba0732))
+
 ## [1.2.0-dev.7](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.6...v1.2.0-dev.7) (2026-11-05)
 
 ### 🐛 Bug Fixes

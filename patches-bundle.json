@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-05T02:14:52",
-  "description": "## [1.2.0-dev.7](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.6...v1.2.0-dev.7) (2026-11-05)\n\n### 🐛 Bug Fixes\n\n* **amoled:** prevent Material3 tonal elevation tint on dark navigation surfaces ([785051e](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/785051e331e2fc4f8d4c0c36cf82fcd88a268514))",
-  "download_url": "https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/download/v1.2.0-dev.7/patches-1.2.0-dev.7.mpp",
+  "created_at": "2026-11-05T12:46:56",
+  "description": "## [1.2.0-dev.8](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.7...v1.2.0-dev.8) (2026-11-05)\n\n### ✨ New Features\n\n* **visual:** add configurable dialpad palettes and native settings screen ([aef15d2](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/aef15d2409382f8c6f229fe07ebe2e4b27ba0732))",
+  "download_url": "https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/download/v1.2.0-dev.8/patches-1.2.0-dev.8.mpp",
   "signature_download_url": "",
-  "version": "1.2.0-dev.7"
+  "version": "1.2.0-dev.8"
 }
