@@ -6,6 +6,17 @@
 
 ### ✨ New Features
 
+* **visual:** add read-only call history filters and real event statistics ([6c74827](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/6c7482750225af33ebd564f3c2bc16912171c9ee))
+* **visual:** stage typed call history color palettes and preview, gated pending adapter audit ([a54990a](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/a54990a7f3b85b924a4796e355a81fe51cb0e34d))
+
+## [1.2.0-dev.11](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.10...v1.2.0-dev.11) (2026-11-05)
+
+### 🐛 Bug Fixes
+
+* **visual:** bind history colors to verified CallLogAdapter row types ([472bfb3](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/472bfb39339a3ec7f3c4a6722be029fcedcb0f46))
+
+### ✨ New Features
+
 * **visual:** stage typed call history color palettes and preview, gated pending adapter audit ([a54990a](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/a54990a7f3b85b924a4796e355a81fe51cb0e34d))
 
 ## [1.2.0-dev.11](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.10...v1.2.0-dev.11) (2026-11-05)
