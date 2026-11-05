@@ -68,6 +68,12 @@ public final class PreferenceRepository {
                 value.equals("cyan") || value.equals("violet") || value.equals("pink");
         }
         if (CALL_STYLE.equals(key)) return value.equals("original") || value.equals("filled") || value.equals("outline");
+        if (CallColorPalette.PLACEMENT.equals(key)) return CallColorPalette.validPlacement(value);
+        if (CallColorPalette.FILTER.equals(key)) return CallColorPalette.validFilter(value);
+        if (CallColorPalette.validColorKey(key)) {
+            try { ThemeEngine.opaque(value); return true; }
+            catch (IllegalArgumentException invalid) { return false; }
+        }
         if (CALL_BACKGROUND.equals(key)) return value.equals("original") || value.equals("cover") || value.equals("video");
         if (COVER_URI.equals(key) || VIDEO_URI.equals(key) || RINGTONE_URI.equals(key)) {
             if (value.isEmpty()) return true;
@@ -93,7 +99,9 @@ public final class PreferenceRepository {
             // The media URIs belong to this specific Android installation.
             // Never export them as portable configuration values.
             if (COVER_URI.equals(key) || VIDEO_URI.equals(key) || RINGTONE_URI.equals(key)) continue;
-            if ((DARK_ONLY.equals(key) || IN_CALL_ENABLED.equals(key)) && val instanceof Boolean) settings.put(key, val);
+            if ((DARK_ONLY.equals(key) || IN_CALL_ENABLED.equals(key) ||
+                CallColorPalette.ENABLED.equals(key) || CallColorPalette.SHOW_LABELS.equals(key)) &&
+                val instanceof Boolean) settings.put(key, val);
             if (val instanceof String && validString(key, (String) val)) settings.put(key, val);
         }
         return new JSONObject().put("schema", 1).put("settings", settings).toString(2);
@@ -108,7 +116,9 @@ public final class PreferenceRepository {
         while (iterator.hasNext()) {
             String key = iterator.next();
             Object value = settings.get(key);
-            if ((DARK_ONLY.equals(key) || IN_CALL_ENABLED.equals(key)) && value instanceof Boolean) editor.putBoolean(key, (Boolean) value);
+            if ((DARK_ONLY.equals(key) || IN_CALL_ENABLED.equals(key) ||
+                CallColorPalette.ENABLED.equals(key) || CallColorPalette.SHOW_LABELS.equals(key)) &&
+                value instanceof Boolean) editor.putBoolean(key, (Boolean) value);
             else if (value instanceof String && validString(key, (String) value) &&
                 !COVER_URI.equals(key) && !VIDEO_URI.equals(key) && !RINGTONE_URI.equals(key)) {
                 editor.putString(key, (String) value);

@@ -185,6 +185,8 @@ public final class VisualCustomizerActivity extends Activity {
         content.addView(mediaPreview);
         refreshMediaPreview();
 
+        CallHistorySettingsPanel.install(this, content);
+
         content.addView(label("Perfiles de apariencia", 19, true));
         content.addView(label("Importar y exportar configura únicamente colores y estilos. " +
             "Los archivos privados y las referencias a medios no se exportan.", 13, false));
@@ -211,6 +213,7 @@ public final class VisualCustomizerActivity extends Activity {
                 if (inCallEnabledSwitch != null) inCallEnabledSwitch.setChecked(false);
                 darkOnlySwitch.setChecked(true);
                 refreshPreview();
+                recreate();
             }).show());
         content.addView(reset);
 
