@@ -151,7 +151,14 @@ public final class CallHistoryRenderer {
             String iconStyle = CallColorPalette.iconStyle(context);
             if (!CallColorPalette.ICON_NATIVE.equals(iconStyle)) {
                 boolean badge = CallColorPalette.ICON_BADGE.equals(iconStyle);
-                int targetSize = ThemeEngine.dp(context, badge ? 23 : 21);
+                // Verified layouts use 16dp and 12dp respectively. Preserve
+                // space for the call metadata in the compact flippable row:
+                // its icon grows only to 17/18dp, not the full 20/22dp.
+                int nativeWidth = lp == null ? 0 : lp.width;
+                int compactLimit = ThemeEngine.dp(context, 14);
+                boolean compact = nativeWidth > 0 && nativeWidth <= compactLimit;
+                int targetSize = ThemeEngine.dp(context,
+                    compact ? (badge ? 18 : 17) : (badge ? 22 : 20));
                 if (lp != null && lp.width > 0 && lp.height > 0) {
                     lp.width = Math.max(lp.width, targetSize);
                     lp.height = Math.max(lp.height, targetSize);

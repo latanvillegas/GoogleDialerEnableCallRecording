@@ -130,10 +130,10 @@ con tres estilos configurables:
 - **Flechas originales:** no se sustituye el drawable nativo; solamente se
   aplica el tinte del estado, como antes.
 - **Iconos telefónicos modernos:** teléfono con marca direccional para
-  recibidas/realizadas, cruz para perdidas, marca de rechazo y símbolo de
-  bloqueo. Tamaño de visualización 21 dp.
+  recibidas/realizadas, cruz para perdidas, barra diagonal de rechazo y
+  símbolo de bloqueo. Tamaños adaptativos: 20 dp normal, 17 dp compacto.
 - **Iconos dentro de círculo de color:** el mismo indicador vectorial con
-  un círculo translúcido y área de 23 dp.
+  un círculo translúcido y área de 22 dp normal o 18 dp compacto.
 
 Los tipos emplean `CallTypeResolver`, ya conectado al binder `Lkit.E`.
 Ningún texto ni número de llamante se emplea para clasificar el tipo.
@@ -161,3 +161,5 @@ En la prueba física hay que verificar las dos variantes de fila, tamaño y
 alineación del icono, salto de línea opcional, reciclado del ViewHolder,
 contraste AMOLED, y cambios de estilo sin afectar el botón `call_button`.
 El éxito de compilación no demuestra por sí solo la corrección visual.
+
+El ajuste de tamaño se fundamenta en las dimensiones 16dp/12dp de los dos layouts verificados, para preservar la anchura disponible del texto secundario y evitar recortes adicionales.

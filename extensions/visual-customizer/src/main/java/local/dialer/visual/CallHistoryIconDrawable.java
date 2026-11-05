@@ -97,8 +97,10 @@ public final class CallHistoryIconDrawable extends Drawable {
                 canvas.drawLine(22, 3, 15, 10, paint);
                 break;
             case REJECTED:
-                canvas.drawLine(14.7f, 3.1f, 22.3f, 10.7f, paint);
-                canvas.drawLine(20.7f, 3.1f, 16.3f, 7.5f, paint);
+                // Phone-off slash across the handset, distinct from the
+                // small upper-right X used for missed calls.
+                paint.setStrokeWidth(2.5f);
+                canvas.drawLine(3.3f, 2.7f, 21.3f, 21.1f, paint);
                 break;
             case BLOCKED:
                 Path shield = new Path();
