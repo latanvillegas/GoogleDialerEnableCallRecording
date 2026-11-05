@@ -26,6 +26,19 @@ public final class CallScreenStyler {
         Snapshot(View view) { background = view.getBackground(); tint = view.getBackgroundTintList(); }
         void restore(View view) { view.setBackground(background); view.setBackgroundTintList(tint); }
     }
+    /** Restore native drawables and tints when the call UI becomes inactive. */
+    public static void restoreVerifiedControls(View root) {
+        if (root == null) return;
+        Context context = root.getContext();
+        for (String name : CONTROL_NAMES) {
+            int id = context.getResources().getIdentifier(name, "id", context.getPackageName());
+            View button = id == 0 ? null : root.findViewById(id);
+            if (button == null) continue;
+            Snapshot snapshot = ORIGINAL.remove(button);
+            if (snapshot != null) snapshot.restore(button);
+        }
+    }
+
     public static void styleVerifiedControls(View root) {
         if (root == null) return;
         Context context = root.getContext();

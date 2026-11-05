@@ -72,6 +72,9 @@ public final class VisualCustomizerActivity extends Activity {
     private Spinner styleSpinner;
     private Spinner accentSpinner;
     private Spinner callBackgroundSpinner;
+    private Spinner callStyleSpinner;
+    private Spinner callAccentSpinner;
+    private Switch inCallEnabledSwitch;
     private Switch darkOnlySwitch;
     private LinearLayout mediaPreview;
     private VideoView playingPreview;
@@ -138,19 +141,28 @@ public final class VisualCustomizerActivity extends Activity {
         content.addView(label("En Personalizado, toca cada número para definir un color distinto. " +
             "Las paletas se guardan localmente y se actualizan al volver al teclado.", 13, false));
 
-        content.addView(label("Pantallas de llamada · configuración experimental", 19, true));
-        content.addView(label("Los controles y fondos de llamadas se muestran aquí como vista previa. " +
-            "Su aplicación durante una llamada real requiere validar el controlador InCallService.", 13, false));
-        selector(content, "Estilo de controles durante llamada", CALL_STYLE_LABELS, CALL_STYLE_VALUES,
+        content.addView(label("Pantallas de llamada · experimental", 19, true));
+        content.addView(label("Puedes personalizar llamadas de audio entrantes y los controles Xatu. " +
+            "No modifica los botones Contestar, Rechazar o Colgar, ni la gestión de llamadas.", 13, false));
+        inCallEnabledSwitch = new Switch(this);
+        inCallEnabledSwitch.setText("Aplicar personalización durante llamadas reales (experimental)");
+        inCallEnabledSwitch.setTextColor(foreground);
+        inCallEnabledSwitch.setChecked(PreferenceRepository.inCallEnabled(this));
+        inCallEnabledSwitch.setPadding(0, dp(15), 0, dp(10));
+        inCallEnabledSwitch.setOnCheckedChangeListener((button, checked) -> {
+            preferences.edit().putBoolean(PreferenceRepository.IN_CALL_ENABLED, checked).apply();
+        });
+        content.addView(inCallEnabledSwitch);
+        callStyleSpinner = selector(content, "Estilo de controles durante llamada", CALL_STYLE_LABELS, CALL_STYLE_VALUES,
             PreferenceRepository.CALL_STYLE, "original");
-        selector(content, "Acento de controles (no modifica Colgar)", ACCENT_LABELS,
+        callAccentSpinner = selector(content, "Acento de controles (no modifica Colgar)", ACCENT_LABELS,
             ACCENT_VALUES, PreferenceRepository.CALL_ACCENT, "system");
-        callBackgroundSpinner = selector(content, "Fondo de pantalla de llamada", CALL_BACKGROUND_LABELS,
+        callBackgroundSpinner = selector(content, "Fondo de llamada entrante de audio", CALL_BACKGROUND_LABELS,
             CALL_BACKGROUND_VALUES, PreferenceRepository.CALL_BACKGROUND, "original");
 
         content.addView(label("Portadas, videotonos y audio", 19, true));
-        content.addView(label("La selección y previsualización están operativas. " +
-            "No reemplazan todavía el tono de llamada de Android ni el video de InCallService.", 13, false));
+        content.addView(label("La portada y el video silencioso se aplican solo si activas la opción experimental. " +
+            "El tono de llamada de Android no se sustituye; el audio se puede previsualizar.", 13, false));
         addButton(content, "Elegir portada desde archivos", v -> MediaThemeEngine.request(this, MediaThemeEngine.PICK_COVER));
         addButton(content, "Elegir video (vista previa silenciosa)", v -> MediaThemeEngine.request(this, MediaThemeEngine.PICK_VIDEO));
         addButton(content, "Elegir audio para tono futuro", v -> MediaThemeEngine.request(this, MediaThemeEngine.PICK_TONE));
@@ -193,6 +205,10 @@ public final class VisualCustomizerActivity extends Activity {
                 profileSpinner.setSelection(0);
                 styleSpinner.setSelection(0);
                 accentSpinner.setSelection(0);
+                if (callStyleSpinner != null) callStyleSpinner.setSelection(0);
+                if (callAccentSpinner != null) callAccentSpinner.setSelection(0);
+                if (callBackgroundSpinner != null) callBackgroundSpinner.setSelection(0);
+                if (inCallEnabledSwitch != null) inCallEnabledSwitch.setChecked(false);
                 darkOnlySwitch.setChecked(true);
                 refreshPreview();
             }).show());

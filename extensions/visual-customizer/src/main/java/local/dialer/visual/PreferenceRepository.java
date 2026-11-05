@@ -15,6 +15,7 @@ public final class PreferenceRepository {
     public static final String STYLE = PREFIX + "style";
     public static final String ACCENT = PREFIX + "accent";
     public static final String DARK_ONLY = PREFIX + "dark_only";
+    public static final String IN_CALL_ENABLED = PREFIX + "in_call_enabled";
     public static final String CALL_STYLE = PREFIX + "call_style";
     public static final String CALL_ACCENT = PREFIX + "call_accent";
     public static final String COVER_URI = PREFIX + "cover_uri";
@@ -30,6 +31,10 @@ public final class PreferenceRepository {
     public static String get(Context context, String key, String fallback) {
         try { return prefs(context).getString(key, fallback); }
         catch (ClassCastException invalid) { return fallback; }
+    }
+    public static boolean inCallEnabled(Context context) {
+        try { return prefs(context).getBoolean(IN_CALL_ENABLED, false); }
+        catch (ClassCastException invalid) { return false; }
     }
     public static boolean darkOnly(Context context) {
         try { return prefs(context).getBoolean(DARK_ONLY, true); }
@@ -88,7 +93,7 @@ public final class PreferenceRepository {
             // The media URIs belong to this specific Android installation.
             // Never export them as portable configuration values.
             if (COVER_URI.equals(key) || VIDEO_URI.equals(key) || RINGTONE_URI.equals(key)) continue;
-            if (DARK_ONLY.equals(key) && val instanceof Boolean) settings.put(key, val);
+            if ((DARK_ONLY.equals(key) || IN_CALL_ENABLED.equals(key)) && val instanceof Boolean) settings.put(key, val);
             if (val instanceof String && validString(key, (String) val)) settings.put(key, val);
         }
         return new JSONObject().put("schema", 1).put("settings", settings).toString(2);
@@ -103,7 +108,7 @@ public final class PreferenceRepository {
         while (iterator.hasNext()) {
             String key = iterator.next();
             Object value = settings.get(key);
-            if (DARK_ONLY.equals(key) && value instanceof Boolean) editor.putBoolean(key, (Boolean) value);
+            if ((DARK_ONLY.equals(key) || IN_CALL_ENABLED.equals(key)) && value instanceof Boolean) editor.putBoolean(key, (Boolean) value);
             else if (value instanceof String && validString(key, (String) value) &&
                 !COVER_URI.equals(key) && !VIDEO_URI.equals(key) && !RINGTONE_URI.equals(key)) {
                 editor.putString(key, (String) value);

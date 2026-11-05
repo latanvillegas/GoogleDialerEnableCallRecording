@@ -10,6 +10,9 @@ import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
@@ -18,6 +21,11 @@ import org.w3c.dom.Element
 
 private const val ANDROID_URI = "http://schemas.android.com/apk/res/android"
 private const val DIALPAD = "Lcom/google/android/libraries/communications/ux/views/dialpad/Dialpad;"
+private const val IN_CALL_ACTIVITY = "Lcom/android/dialer/incall/activity/ui/InCallActivity;"
+private const val IN_CALL_RESUME =
+    "Llocal/dialer/visual/InCallThemeHooks;->onPostResume(Landroid/app/Activity;)V"
+private const val IN_CALL_PAUSE =
+    "Llocal/dialer/visual/InCallThemeHooks;->onPause(Landroid/app/Activity;)V"
 private const val VISUAL_ACTIVITY = "local.dialer.visual.VisualCustomizerActivity"
 private const val VISUAL_ACTION = "local.dialer.visual.CONFIGURE"
 private const val VISUAL_HOOK =
@@ -131,7 +139,7 @@ private val visualCustomizerResourcesPatch = resourcePatch {
 @Suppress("unused")
 val dialerVisualCustomizerPatch = bytecodePatch(
     name = "Dialer Visual Customizer",
-    description = "Add a visual customization screen to Display options: pastel/neon/AMOLED palettes, colored keys, three styles, call-button accents, live preview and reset. Opt-in; preserves native themes and other patches.",
+    description = "Modular visual customization: dialpad palettes, portable profiles and opt-in experimental audio-call covers, muted video backgrounds and Xatu control colors. Native call functions and other patches remain untouched.",
     default = false,
 ) {
     compatibleWith(
@@ -187,5 +195,48 @@ val dialerVisualCustomizerPatch = bytecodePatch(
         if (!mutable.methods.add(focus)) {
             throw PatchException("Visual Customizer: failed to install focus refresh method")
         }
+
+        // InCallActivity is directly verified in the user's Phone 241 DEX.
+        // A single activity hook observes fragment layouts in the UI process,
+        // without intercepting Telecom callbacks, answer/reject/end handlers,
+        // InCallServiceImpl, or Android's ringtone engine.
+        val inCall = classDefBy(IN_CALL_ACTIVITY)
+        fun lifecycleMethod(name: String, registers: Int): Method {
+            val method = inCall.methods.singleOrNull { candidate ->
+                candidate.name == name && candidate.returnType == "V" &&
+                    candidate.parameterTypes.isEmpty()
+            } ?: throw PatchException("Visual Customizer: unverified InCallActivity.$name")
+            val body = method.implementation
+                ?: throw PatchException("Visual Customizer: missing InCallActivity.$name body")
+            val superCall = body.instructions.filterIsInstance<ReferenceInstruction>()
+                .mapNotNull { it.reference as? MethodReference }
+                .count {
+                    it.definingClass == "Loqs;" && it.name == name &&
+                        it.parameterTypes.isEmpty() && it.returnType == "V"
+                }
+            if (body.registerCount != registers || superCall != 1 ||
+                body.instructions.count { it.opcode == Opcode.RETURN_VOID } != 1
+            ) {
+                throw PatchException("Visual Customizer: inspected InCallActivity.$name contract changed")
+            }
+            return method
+        }
+        // .locals 1 + p0; onPostResume returns after closing its native scope.
+        // .locals 6 + p0; onPause is invoked before the original body begins.
+        lifecycleMethod("onPostResume", 2)
+        lifecycleMethod("onPause", 7)
+        val inCallMutable = mutableClassDefBy(inCall)
+        val postResume = inCallMutable.methods.single {
+            it.name == "onPostResume" && it.parameterTypes.isEmpty()
+        }
+        val postReturn = postResume.implementation!!.instructions.indexOfFirst {
+            it.opcode == Opcode.RETURN_VOID
+        }
+        if (postReturn < 0) throw PatchException("Visual Customizer: missing onPostResume return")
+        postResume.addInstruction(postReturn, "invoke-static { p0 }, $IN_CALL_RESUME")
+        val pause = inCallMutable.methods.single {
+            it.name == "onPause" && it.parameterTypes.isEmpty()
+        }
+        pause.addInstruction(0, "invoke-static { p0 }, $IN_CALL_PAUSE")
     }
 }

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.view.ViewGroup;
 import android.view.View;
@@ -14,13 +15,68 @@ import android.widget.ImageView;
 import android.widget.VideoView;
 import android.content.Context;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /** Media selection and bounded previews; never intercepts Android ringtone or InCallService audio. */
 public final class MediaThemeEngine {
     public static final int PICK_COVER = 3401;
     public static final int PICK_VIDEO = 3402;
     public static final int PICK_TONE = 3403;
+    private static final ExecutorService COVER_DECODER = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "DialerVisual-CoverDecoder");
+        thread.setDaemon(true);
+        return thread;
+    });
     private MediaThemeEngine() { }
+
+    /** Read in the background so image decoding cannot delay answer/reject UI. */
+    private static ImageView incomingCover(Context context) {
+        String value = PreferenceRepository.get(context, PreferenceRepository.COVER_URI, "");
+        if (value.isEmpty()) return null;
+        Uri uri = Uri.parse(value);
+        ImageView image = new ImageView(context);
+        image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        image.setContentDescription("Portada personalizada");
+        WeakReference<ImageView> imageRef = new WeakReference<>(image);
+        ContentResolver resolver = context.getApplicationContext().getContentResolver();
+        COVER_DECODER.execute(() -> {
+            Bitmap bitmap = null;
+            try (InputStream first = resolver.openInputStream(uri)) {
+                if (first == null) return;
+                BitmapFactory.Options bounds = new BitmapFactory.Options();
+                bounds.inJustDecodeBounds = true;
+                BitmapFactory.decodeStream(first, null, bounds);
+                if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return;
+                int sample = 1;
+                while (bounds.outWidth / sample > 1080 || bounds.outHeight / sample > 1920) {
+                    sample *= 2;
+                }
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inSampleSize = sample;
+                try (InputStream second = resolver.openInputStream(uri)) {
+                    if (second != null) bitmap = BitmapFactory.decodeStream(second, null, options);
+                }
+            } catch (Exception ignored) { return; }
+            if (bitmap == null) return;
+            ImageView target = imageRef.get();
+            if (target == null || target.getParent() == null) {
+                bitmap.recycle();
+                return;
+            }
+            final Bitmap ready = bitmap;
+            target.post(() -> {
+                ImageView attached = imageRef.get();
+                if (attached == null || attached.getParent() == null) {
+                    ready.recycle();
+                    return;
+                }
+                attached.setImageBitmap(ready);
+            });
+        });
+        return image;
+    }
     public static void request(Activity activity, int requestCode) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -106,14 +162,22 @@ public final class MediaThemeEngine {
         if (uri.isEmpty()) return null;
         VideoView video = new VideoView(context);
         video.setContentDescription("Vista previa de video sin sonido");
+        video.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE);
         try { video.setVideoURI(Uri.parse(uri)); }
         catch (RuntimeException invalid) { return null; }
         video.setOnPreparedListener(player -> {
+            if (video.getParent() == null || !video.isAttachedToWindow()) {
+                video.stopPlayback();
+                return;
+            }
             player.setVolume(0.0f, 0.0f);
             player.setLooping(true);
             video.start();
         });
-        video.setOnErrorListener((player, what, extra) -> true);
+        video.setOnErrorListener((player, what, extra) -> {
+            video.setVisibility(View.GONE);
+            return true;
+        });
         return video;
     }
     /**
@@ -127,13 +191,13 @@ public final class MediaThemeEngine {
         if (PreferenceRepository.darkOnly(context) && !ThemeEngine.isNight(context)) return null;
         String mode = PreferenceRepository.get(context, PreferenceRepository.CALL_BACKGROUND, "original");
         View media = null;
-        if ("cover".equals(mode)) media = coverPreview(context);
+        if ("cover".equals(mode)) media = incomingCover(context);
         else if ("video".equals(mode)) media = mutedVideoPreview(context);
         if (media == null) return null;
         media.setClickable(false);
         media.setFocusable(false);
         media.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        root.addView(media, 0, new FrameLayout.LayoutParams(
+        root.addView(media, new FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         return media;
     }
@@ -141,6 +205,7 @@ public final class MediaThemeEngine {
         if (root == null || installed == null) return;
         if (installed instanceof VideoView) ((VideoView) installed).stopPlayback();
         if (installed.getParent() == root) root.removeView(installed);
+        if (installed instanceof ImageView) ((ImageView) installed).setImageDrawable(null);
     }
     public static MediaPlayer previewTone(Context context) {
         String path = PreferenceRepository.get(context, PreferenceRepository.RINGTONE_URI, "");
