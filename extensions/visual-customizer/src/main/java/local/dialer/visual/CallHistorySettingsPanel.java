@@ -30,6 +30,12 @@ public final class CallHistorySettingsPanel {
     private static final String[] PLACEMENT_VALUES = {
         CallColorPalette.ICON, CallColorPalette.ICON_AND_TEXT, CallColorPalette.STRIPE
     };
+    private static final String[] ICON_STYLE_LABELS = {
+        "Flechas originales", "Iconos telefónicos modernos", "Iconos en círculos de color"
+    };
+    private static final String[] ICON_STYLE_VALUES = {
+        CallColorPalette.ICON_NATIVE, CallColorPalette.ICON_PHONE, CallColorPalette.ICON_BADGE
+    };
     private static final String[] FILTER_LABELS = {
         "Todas", "Perdidas", "Recibidas", "Realizadas", "Spam", "Rechazadas", "Bloqueadas"
     };
@@ -81,8 +87,10 @@ public final class CallHistorySettingsPanel {
 
         spinner(root, "Ubicación del color", PLACEMENT_LABELS, PLACEMENT_VALUES,
             CallColorPalette.PLACEMENT, CallColorPalette.ICON_AND_TEXT);
+        spinner(root, "Indicadores de tipo de llamada", ICON_STYLE_LABELS,
+            ICON_STYLE_VALUES, CallColorPalette.ICON_STYLE, CallColorPalette.ICON_PHONE);
         Switch labels = new Switch(activity);
-        labels.setText("Mostrar etiquetas en la vista previa");
+        labels.setText("Mostrar tipo de llamada también en el historial (2 líneas)");
         labels.setTextColor(foreground);
         labels.setChecked(CallColorPalette.labels(activity));
         labels.setOnCheckedChangeListener((button, checked) -> {
@@ -105,6 +113,10 @@ public final class CallHistorySettingsPanel {
 
         spinner(root, "Filtrar vista previa (no filtra llamadas reales)",
             FILTER_LABELS, FILTER_VALUES, CallColorPalette.FILTER, "all");
+        root.addView(text("Los iconos sustituyen solamente las flechas pequeñas: " +
+            "el botón para llamar a la derecha se conserva. Los nombres permanecen " +
+            "blancos; las etiquetas opcionales usan una línea propia para no " +
+            "sustituir la fecha.", 12, false));
         root.addView(text("Vista previa de ejemplo", 15, true));
         preview.setPadding(dp(10), dp(10), dp(10), dp(10));
         preview.setBackgroundColor(Color.BLACK);
@@ -207,20 +219,35 @@ public final class CallHistorySettingsPanel {
                 stripe.setTextColor(color);
                 row.addView(stripe);
             }
-            String arrow = kind == CallTypeResolver.Kind.INCOMING ? "↘" :
-                kind == CallTypeResolver.Kind.OUTGOING ? "↗" :
-                kind == CallTypeResolver.Kind.MISSED ? "↙" :
-                kind == CallTypeResolver.Kind.SPAM ? "!" :
-                kind == CallTypeResolver.Kind.REJECTED ? "×" : "⊘";
-            TextView marker = text(arrow, 23, true);
-            marker.setTextColor(color);
-            row.addView(marker, new LinearLayout.LayoutParams(dp(34), dp(45)));
+            String iconStyle = CallColorPalette.iconStyle(activity);
+            if (CallColorPalette.ICON_NATIVE.equals(iconStyle)) {
+                String arrow = kind == CallTypeResolver.Kind.INCOMING ? "↘" :
+                    kind == CallTypeResolver.Kind.OUTGOING ? "↗" :
+                    kind == CallTypeResolver.Kind.MISSED ? "↙" :
+                    kind == CallTypeResolver.Kind.SPAM ? "!" :
+                    kind == CallTypeResolver.Kind.REJECTED ? "×" : "⊘";
+                TextView marker = text(arrow, 23, true);
+                marker.setTextColor(color);
+                row.addView(marker, new LinearLayout.LayoutParams(dp(34), dp(45)));
+            } else {
+                android.widget.ImageView marker = new android.widget.ImageView(activity);
+                marker.setImageDrawable(new CallHistoryIconDrawable(kind, color,
+                    CallColorPalette.ICON_BADGE.equals(iconStyle)));
+                marker.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+                marker.setContentDescription("Llamada " + kind.label.toLowerCase(
+                    java.util.Locale.ROOT));
+                LinearLayout.LayoutParams iconParams =
+                    new LinearLayout.LayoutParams(dp(28), dp(35));
+                iconParams.setMargins(0, 0, dp(6), 0);
+                row.addView(marker, iconParams);
+            }
             LinearLayout column = new LinearLayout(activity);
             column.setOrientation(LinearLayout.VERTICAL);
             TextView name = text("Contacto de ejemplo", 14, false);
             name.setTextColor(Color.WHITE);
             column.addView(name);
-            TextView summary = text(labels ? "Ejemplo · " + kind.label : "Ejemplo · llamada", 12, false);
+            TextView summary = text(labels ? kind.label + "\nCelular · 27 oct, 9:15"
+                : "Celular · 27 oct, 9:15", 12, false);
             summary.setTextColor(CallColorPalette.ICON.equals(placement) ? 0xffaaaaaa : color);
             column.addView(summary);
             row.addView(column);

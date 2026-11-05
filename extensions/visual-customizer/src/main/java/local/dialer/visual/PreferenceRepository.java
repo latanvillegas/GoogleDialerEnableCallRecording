@@ -69,6 +69,7 @@ public final class PreferenceRepository {
         }
         if (CALL_STYLE.equals(key)) return value.equals("original") || value.equals("filled") || value.equals("outline");
         if (CallColorPalette.PLACEMENT.equals(key)) return CallColorPalette.validPlacement(value);
+        if (CallColorPalette.ICON_STYLE.equals(key)) return CallColorPalette.validIconStyle(value);
         if (CallColorPalette.FILTER.equals(key)) return CallColorPalette.validFilter(value);
         if (CallColorPalette.validColorKey(key)) {
             try { ThemeEngine.opaque(value); return true; }

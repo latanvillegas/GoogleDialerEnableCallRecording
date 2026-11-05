@@ -114,3 +114,50 @@ prueba física de compatibilidad con el permiso `READ_CALL_LOG` del clon Morphe
 en Android 16. Un APK sin ese permiso seguirá mostrando un aviso y no consultará
 registros. Para habilitar el spam de Google Phone dentro del adaptador nativo
 aún necesitamos verificar el campo concreto que representa ese veredicto.
+
+## Indicadores vectoriales y etiquetas — Google Phone 241
+
+La inspección de `googlephone-241-amoled-resources.zip` verificó que tanto
+`res/layout/conversation_history_entry.xml` como su variante `_flippable`
+usan un `ImageView` con ID `call_type_icon`, con dimensiones originales de
+16×16 dp y 12×12 dp respectivamente. El botón de la derecha usa otro ID:
+`call_button`, que **no se modifica**.
+
+El motor `CallHistoryIconDrawable` genera indicadores vectoriales nativos
+de Android (Canvas/Path, sin bibliotecas externas ni recursos inventados),
+con tres estilos configurables:
+
+- **Flechas originales:** no se sustituye el drawable nativo; solamente se
+  aplica el tinte del estado, como antes.
+- **Iconos telefónicos modernos:** teléfono con marca direccional para
+  recibidas/realizadas, cruz para perdidas, marca de rechazo y símbolo de
+  bloqueo. Tamaño de visualización 21 dp.
+- **Iconos dentro de círculo de color:** el mismo indicador vectorial con
+  un círculo translúcido y área de 23 dp.
+
+Los tipos emplean `CallTypeResolver`, ya conectado al binder `Lkit.E`.
+Ningún texto ni número de llamante se emplea para clasificar el tipo.
+El indicador de **spam permanece en la vista previa**, sin aplicación real
+hasta verificar la bandera explícita del modelo nativo.
+
+El `CallHistoryRenderer` almacena el drawable, tinte, tipo de escala,
+dimensiones de la vista, descripción accesible y propiedades originales
+del `TextView`. Antes de reutilizar una fila, restaura estos atributos.
+Los cambios se revierten también si se produce una excepción durante el
+renderizado, preservando la UI nativa.
+
+Las franjas usan `GradientDrawable` redondeado de 3 dp, dentro de la fila
+con 8 dp de separación horizontal y 5 dp vertical; no interceptan toques.
+La opción **mostrar etiquetas** (desactivada por defecto) incorpora una
+primera línea con el tipo de llamada y una segunda con el texto nativo,
+para preservar fecha y metadatos. No se modifican los nombres.
+
+**Agrupaciones:** el tipo de cada fila sigue siendo el tipo del evento
+que Google Phone ya expone mediante `Lkgn.q`, sin inferir la composición
+histórica del grupo, que no se encuentra en el contrato auditado. El
+contador nativo de llamadas agrupadas permanece inalterado.
+
+En la prueba física hay que verificar las dos variantes de fila, tamaño y
+alineación del icono, salto de línea opcional, reciclado del ViewHolder,
+contraste AMOLED, y cambios de estilo sin afectar el botón `call_button`.
+El éxito de compilación no demuestra por sí solo la corrección visual.

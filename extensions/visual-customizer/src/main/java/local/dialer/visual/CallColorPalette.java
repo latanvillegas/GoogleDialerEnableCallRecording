@@ -11,6 +11,10 @@ public final class CallColorPalette {
     public static final String SHOW_LABELS = HISTORY_PREFIX + "show_labels";
     public static final String PLACEMENT = HISTORY_PREFIX + "placement";
     public static final String FILTER = HISTORY_PREFIX + "filter";
+    public static final String ICON_STYLE = HISTORY_PREFIX + "icon_style";
+    public static final String ICON_NATIVE = "native";
+    public static final String ICON_PHONE = "phone";
+    public static final String ICON_BADGE = "badge";
     public static final String COLOR_PREFIX = HISTORY_PREFIX + "color_";
     public static final String ICON = "icon";
     public static final String ICON_AND_TEXT = "icon_text";
@@ -56,6 +60,14 @@ public final class CallColorPalette {
         String value = PreferenceRepository.get(context, PLACEMENT, ICON_AND_TEXT);
         return validPlacement(value) ? value : ICON_AND_TEXT;
     }
+    public static String iconStyle(Context context) {
+        String value = PreferenceRepository.get(context, ICON_STYLE, ICON_PHONE);
+        return validIconStyle(value) ? value : ICON_PHONE;
+    }
+    public static boolean validIconStyle(String value) {
+        return ICON_NATIVE.equals(value) || ICON_PHONE.equals(value) || ICON_BADGE.equals(value);
+    }
+
     public static boolean validPlacement(String value) {
         return ICON.equals(value) || ICON_AND_TEXT.equals(value) || STRIPE.equals(value);
     }
@@ -79,7 +91,7 @@ public final class CallColorPalette {
     }
     public static void reset(Context context) {
         SharedPreferences.Editor edit = PreferenceRepository.prefs(context).edit();
-        edit.remove(ENABLED).remove(SHOW_LABELS).remove(PLACEMENT).remove(FILTER);
+        edit.remove(ENABLED).remove(SHOW_LABELS).remove(PLACEMENT).remove(FILTER).remove(ICON_STYLE);
         for (CallTypeResolver.Kind kind : supported()) edit.remove(colorKey(kind));
         edit.apply();
     }
