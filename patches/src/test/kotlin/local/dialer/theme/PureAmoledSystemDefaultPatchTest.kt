@@ -302,6 +302,72 @@ class PureAmoledSystemDefaultPatchTest {
         assertEquals("?colorSecondaryContainer", sourceIndicator.getElementsByTagName("item").item(1).textContent)
     }
 
+    @Test fun `dark Dialer theme disables tonal elevation overlay without changing light`() {
+        val doc = xml(
+            """
+            <resources>
+                <style name="Base.Theme.GoogleMaterial3.Dialer.Dark.NoActionBar">
+                    <item name="colorNavigationBar">#FF000000</item>
+                </style>
+                <style name="Base.Theme.GoogleMaterial3.Dialer.Light.NoActionBar">
+                    <item name="elevationOverlayEnabled">true</item>
+                </style>
+            </resources>
+            """.trimIndent(),
+        )
+        assertEquals(1, disablePureAmoledDarkTonalElevation(doc))
+        assertEquals(0, disablePureAmoledDarkTonalElevation(doc))
+
+        val styles = doc.getElementsByTagName("style")
+        val dark = styles.item(0) as org.w3c.dom.Element
+        val light = styles.item(1) as org.w3c.dom.Element
+        val darkItems = dark.getElementsByTagName("item")
+        assertEquals("elevationOverlayEnabled", (darkItems.item(1) as org.w3c.dom.Element).getAttribute("name"))
+        assertEquals("false", darkItems.item(1).textContent)
+        assertEquals("true", light.getElementsByTagName("item").item(0).textContent)
+    }
+
+    @Test fun `existing dark elevation setting is safely overridden`() {
+        val doc = xml(
+            """
+            <resources>
+                <style name="Base.Theme.GoogleMaterial3.Dialer.Dark.NoActionBar">
+                    <item name="elevationOverlayEnabled">true</item>
+                </style>
+            </resources>
+            """.trimIndent(),
+        )
+        assertEquals(1, disablePureAmoledDarkTonalElevation(doc))
+        assertEquals(0, disablePureAmoledDarkTonalElevation(doc))
+    }
+
+    @Test fun `night bottom navigation removes Material3 surface tint and elevation`() {
+        val base = xml(
+            """
+            <resources>
+                <style name="Widget.Material3Expressive.BottomNavigationView" parent="@style/Widget.Material3.BottomNavigationView">
+                    <item name="android:background">?attr/colorSurfaceContainer</item>
+                    <item name="elevation">@dimen/m3_comp_nav_bar_container_elevation</item>
+                    <item name="itemIconTint">@color/m3expressive_bottom_nav_item_icon_tint</item>
+                </style>
+            </resources>
+            """.trimIndent(),
+        )
+        val night = xml("<resources/>")
+        assertEquals(1, installPureAmoledNightBottomNavigationOverride(base, night))
+        assertEquals(0, installPureAmoledNightBottomNavigationOverride(base, night))
+
+        val source = base.getElementsByTagName("style").item(0) as org.w3c.dom.Element
+        val copy = night.getElementsByTagName("style").item(0) as org.w3c.dom.Element
+        val sourceItems = source.getElementsByTagName("item")
+        val nightItems = copy.getElementsByTagName("item")
+        assertEquals("?attr/colorSurfaceContainer", sourceItems.item(0).textContent)
+        assertEquals("@dimen/m3_comp_nav_bar_container_elevation", sourceItems.item(1).textContent)
+        assertEquals("#FF000000", nightItems.item(0).textContent)
+        assertEquals("0dp", nightItems.item(1).textContent)
+        assertEquals("@color/m3expressive_bottom_nav_item_icon_tint", nightItems.item(2).textContent)
+    }
+
     @Test fun `main portrait layout receives explicit black only in night copy`() {
         val source = xml(
             """

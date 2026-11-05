@@ -273,6 +273,41 @@ internal fun applyPureAmoledDarkDialerNavigation(document: Document): Int {
     return changes
 }
 
+/**
+ * Material3's tonal elevation layer can tint a literal black surface with
+ * wallpaper-derived brown/purple even when the night XML background is black.
+ * Explicitly disable that overlay only in the Google Phone dark theme.
+ * The light Dialer theme and global Material3 themes stay unchanged.
+ */
+internal fun disablePureAmoledDarkTonalElevation(document: Document): Int {
+    val root = document.documentElement
+    if (root.tagName != "resources") {
+        throw PatchException("Pure AMOLED: unexpected dark theme XML root ${root.tagName}")
+    }
+
+    val dark = namedStyle(root, "Base.Theme.GoogleMaterial3.Dialer.Dark.NoActionBar")
+        ?: throw PatchException("Pure AMOLED: dark Dialer theme is missing")
+    val overlay = styleItem(dark, "elevationOverlayEnabled")
+    if (overlay == null) {
+        val item = document.createElement("item")
+        item.setAttribute("name", "elevationOverlayEnabled")
+        item.textContent = "false"
+        dark.appendChild(item)
+        return 1
+    }
+
+    return when (overlay.textContent.trim()) {
+        "false" -> 0
+        "true" -> {
+            overlay.textContent = "false"
+            1
+        }
+        else -> throw PatchException(
+            "Pure AMOLED: unexpected elevationOverlayEnabled=${overlay.textContent.trim()}",
+        )
+    }
+}
+
 internal fun installPureAmoledNightWidgetOverrides(
     sourceStyles: Document,
     nightStyles: Document,
@@ -313,6 +348,56 @@ internal fun installPureAmoledNightWidgetOverrides(
     return changes
 }
 
+
+/**
+ * The bottom bar's Material3Expressive style has its own background and a
+ * level-2 tonal elevation. The night layout's literal black alone is not
+ * sufficient if MaterialShapeDrawable applies a tonal elevation overlay.
+ * Clone just this widget style under values-night; keep the day style intact.
+ */
+internal fun installPureAmoledNightBottomNavigationOverride(
+    sourceStyles: Document,
+    nightStyles: Document,
+): Int {
+    val sourceRoot = sourceStyles.documentElement
+    val nightRoot = nightStyles.documentElement
+    if (sourceRoot.tagName != "resources" || nightRoot.tagName != "resources") {
+        throw PatchException("Pure AMOLED: unexpected bottom navigation styles XML root")
+    }
+    val name = "Widget.Material3Expressive.BottomNavigationView"
+    val source = namedStyle(sourceRoot, name)
+        ?: throw PatchException("Pure AMOLED: inspected bottom navigation style missing")
+    val sourceBackground = styleItem(source, "android:background")
+        ?: throw PatchException("Pure AMOLED: bottom navigation background missing")
+    if (!matchesExpectedAmoledAttributeReference(
+            sourceBackground.textContent,
+            "?colorSurfaceContainer",
+        )
+    ) {
+        throw PatchException("Pure AMOLED: unexpected bottom navigation background")
+    }
+    val sourceElevation = styleItem(source, "elevation")
+        ?: throw PatchException("Pure AMOLED: bottom navigation elevation missing")
+    if (sourceElevation.textContent.trim() != "@dimen/m3_comp_nav_bar_container_elevation") {
+        throw PatchException("Pure AMOLED: unexpected bottom navigation elevation")
+    }
+
+    val existing = namedStyle(nightRoot, name)
+    if (existing != null) {
+        if (styleItem(existing, "android:background")?.textContent?.trim() != BLACK ||
+            styleItem(existing, "elevation")?.textContent?.trim() != "0dp"
+        ) {
+            throw PatchException("Pure AMOLED: conflicting night bottom navigation style")
+        }
+        return 0
+    }
+
+    val night = nightStyles.importNode(source, true) as Element
+    styleItem(night, "android:background")!!.textContent = BLACK
+    styleItem(night, "elevation")!!.textContent = "0dp"
+    nightRoot.appendChild(night)
+    return 1
+}
 
 /**
  * The actual main screens use two drawer_main_fragment layout variants.
@@ -397,7 +482,7 @@ internal fun applyPureAmoledNightMainLayout(
 @Suppress("unused")
 val pureAmoledSystemDefaultPatch = resourcePatch(
     name = "Pure AMOLED - System default",
-    description = "Experimental: system-following pure black main surfaces, drawer, and bottom navigation via night-only layout overlays; neutral active-tab indicator. Light mode, call recording and DroidGuard unchanged.",
+    description = "Experimental: night-only AMOLED surfaces with dark-theme tonal elevation disabled, black drawer/bottom bar, and neutral active indicator; light mode, call recording and DroidGuard unchanged.",
     default = false,
 ) {
     compatibleWith(
@@ -475,8 +560,13 @@ val pureAmoledSystemDefaultPatch = resourcePatch(
         var changedNavigation = 0
         document("res/values/styles.xml").use { baseStyles ->
             changedNavigation += applyPureAmoledDarkDialerNavigation(baseStyles)
+            changedNavigation += disablePureAmoledDarkTonalElevation(baseStyles)
             document("res/values-night/styles.xml").use { nightStyles ->
                 changedNavigation += installPureAmoledNightWidgetOverrides(
+                    baseStyles,
+                    nightStyles,
+                )
+                changedNavigation += installPureAmoledNightBottomNavigationOverride(
                     baseStyles,
                     nightStyles,
                 )
