@@ -2,6 +2,19 @@
 
 ### 🐛 Bug Fixes
 
+* **visual:** avoid strong ViewHolder references in history snapshots ([66dbbf9](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/66dbbf9a2b6fb4eb892653f59221c28534c989eb))
+* **visual:** bind history colors to verified CallLogAdapter row types ([472bfb3](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/472bfb39339a3ec7f3c4a6722be029fcedcb0f46))
+
+### ✨ New Features
+
+* **visual:** add accessible per-call-type icons and aligned history markers ([3ac48d7](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/3ac48d78d0364f508b78a7d75de5e04240274b7f))
+* **visual:** add read-only call history filters and real event statistics ([6c74827](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/6c7482750225af33ebd564f3c2bc16912171c9ee))
+* **visual:** stage typed call history color palettes and preview, gated pending adapter audit ([a54990a](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/a54990a7f3b85b924a4796e355a81fe51cb0e34d))
+
+## [1.2.0-dev.11](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.10...v1.2.0-dev.11) (2026-11-05)
+
+### 🐛 Bug Fixes
+
 * **visual:** bind history colors to verified CallLogAdapter row types ([472bfb3](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/472bfb39339a3ec7f3c4a6722be029fcedcb0f46))
 
 ### ✨ New Features
