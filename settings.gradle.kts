@@ -22,7 +22,11 @@ plugins {
 
 rootProject.name = "google-phone-call-recording-patches"
 settings {
-    extensions { projectsPath = null }
+    extensions {
+        // The visual customizer is a Java/DEX runtime extension, packaged in the .mpp.
+        projectsPath = "extensions"
+        defaultNamespace = "local.dialer.visual"
+    }
 }
 
 if (providers.gradleProperty("localMorpheSources").orNull == "true") {
