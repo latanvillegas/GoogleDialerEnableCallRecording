@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -50,7 +51,7 @@ public final class CallHistoryRenderer {
     }
 
     private static final class Snapshot {
-        ImageView image;
+        WeakReference<ImageView> image;
         Drawable imageDrawable;
         ColorStateList imageTint;
         ImageView.ScaleType imageScaleType;
@@ -59,7 +60,7 @@ public final class CallHistoryRenderer {
         CharSequence imageDescription;
         int imageAccessibility;
 
-        TextView secondary;
+        WeakReference<TextView> secondary;
         ColorStateList secondaryColor;
         CharSequence secondaryText;
         TextUtils.TruncateAt secondaryEllipsize;
@@ -77,8 +78,9 @@ public final class CallHistoryRenderer {
         Snapshot prior = ORIGINAL.remove(row);
         if (prior == null) return;
 
-        if (prior.image != null) {
-            ImageView icon = prior.image;
+        ImageView restoredIcon = prior.image == null ? null : prior.image.get();
+        if (restoredIcon != null) {
+            ImageView icon = restoredIcon;
             icon.setImageTintList(null);
             icon.setImageDrawable(prior.imageDrawable);
             icon.setImageTintList(prior.imageTint);
@@ -92,8 +94,9 @@ public final class CallHistoryRenderer {
                 icon.setLayoutParams(lp);
             }
         }
-        if (prior.secondary != null) {
-            TextView text = prior.secondary;
+        TextView restoredText = prior.secondary == null ? null : prior.secondary.get();
+        if (restoredText != null) {
+            TextView text = restoredText;
             text.setSingleLine(prior.secondaryMaxLines == 1);
             text.setMaxLines(prior.secondaryMaxLines);
             text.setEllipsize(prior.secondaryEllipsize);
@@ -126,7 +129,7 @@ public final class CallHistoryRenderer {
         ImageView icon = (ImageView) iconView;
         TextView secondary = (TextView) textView;
         Snapshot prior = new Snapshot();
-        prior.image = icon;
+        prior.image = new WeakReference<>(icon);
         prior.imageDrawable = icon.getDrawable();
         prior.imageTint = icon.getImageTintList();
         prior.imageScaleType = icon.getScaleType();
@@ -135,7 +138,7 @@ public final class CallHistoryRenderer {
         ViewGroup.LayoutParams lp = icon.getLayoutParams();
         prior.imageWidth = lp == null ? 0 : lp.width;
         prior.imageHeight = lp == null ? 0 : lp.height;
-        prior.secondary = secondary;
+        prior.secondary = new WeakReference<>(secondary);
         prior.secondaryColor = secondary.getTextColors();
         prior.secondaryText = secondary.getText();
         prior.secondaryMaxLines = secondary.getMaxLines();
