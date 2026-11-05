@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-05T13:19:47",
-  "description": "## [1.2.0-dev.9](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.8...v1.2.0-dev.9) (2026-11-05)\n\n### ✨ New Features\n\n* **visual:** modular theme engines, palettes, media previews and portable profiles ([c390f85](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/c390f853206ef3f922adf7a577b3e17e708d6171))",
-  "download_url": "https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/download/v1.2.0-dev.9/patches-1.2.0-dev.9.mpp",
+  "created_at": "2026-11-05T13:46:59",
+  "description": "## [1.2.0-dev.10](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.9...v1.2.0-dev.10) (2026-11-05)\n\n### ✨ New Features\n\n* **visual:** opt-in in-call covers, muted video and verified Xatu control styling ([7698eaf](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/7698eaff87689c381c935bda5105d3fcdae50e1a))",
+  "download_url": "https://github.com/latanvillegas/GoogleDialerEnableCallRecording/releases/download/v1.2.0-dev.10/patches-1.2.0-dev.10.mpp",
   "signature_download_url": "",
-  "version": "1.2.0-dev.9"
+  "version": "1.2.0-dev.10"
 }

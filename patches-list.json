@@ -1,10 +1,10 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.2.0-dev.9",
+  "version": "1.2.0-dev.10",
   "patches": [
     {
       "name": "Dialer Visual Customizer",
-      "description": "Add a visual customization screen to Display options: pastel/neon/AMOLED palettes, colored keys, three styles, call-button accents, live preview and reset. Opt-in; preserves native themes and other patches.",
+      "description": "Modular visual customization: dialpad palettes, portable profiles and opt-in experimental audio-call covers, muted video backgrounds and Xatu control colors. Native call functions and other patches remain untouched.",
       "default": false,
       "category": null,
       "compatiblePackages": [

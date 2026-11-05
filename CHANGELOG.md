@@ -1,3 +1,9 @@
+## [1.2.0-dev.10](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.9...v1.2.0-dev.10) (2026-11-05)
+
+### ✨ New Features
+
+* **visual:** opt-in in-call covers, muted video and verified Xatu control styling ([7698eaf](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/commit/7698eaff87689c381c935bda5105d3fcdae50e1a))
+
 ## [1.2.0-dev.9](https://github.com/latanvillegas/GoogleDialerEnableCallRecording/compare/v1.2.0-dev.8...v1.2.0-dev.9) (2026-11-05)
 
 ### ✨ New Features
