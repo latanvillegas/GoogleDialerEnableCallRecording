@@ -46,7 +46,6 @@ See [device testing and installation](docs/testing.md) for signing, privileged p
 
 | 241.0.991235506 |
 | :---: |
-| Experimental DroidGuard connection failure handling; not a call-audio permission fix. |
 
 | Patch | Description |
 |---|---|
