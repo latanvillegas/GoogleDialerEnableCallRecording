@@ -12,6 +12,13 @@ import org.w3c.dom.Element
 private const val BLACK = "#FF000000"
 
 /**
+ * Google Phone 241 may use different version codes for the same versionName.
+ * Resource layout/style invariants below still reject incompatible variants.
+ */
+internal fun isSupportedPureAmoledApp(packageName: String, versionName: String): Boolean =
+    packageName == "com.google.android.dialer" && versionName == "241.0.991235506"
+
+/**
  * Only neutral night surfaces are eligible. Preserve functional colors such as
  * error/success/warning banners, branded previews, accessibility controls and
  * buttons; turning those black would erase their purpose and contrast.
@@ -492,20 +499,21 @@ val pureAmoledSystemDefaultPatch = resourcePatch(
             appIconColor = 0x1A73E8,
             targets = listOf(
                 AppTarget(
-                    "241.0.991235506",
-                    versionCode = 20129558,
-                    description = "Experimental AMOLED resource patch; requires APK and device validation.",
+                    version = "241.0.991235506",
+                    description = "Experimental: version-code variants require matching resource layouts and device validation.",
                 ),
             ),
         ),
     )
 
     execute {
-        if (packageMetadata.packageName != "com.google.android.dialer" ||
-            packageMetadata.versionName != "241.0.991235506" ||
-            packageMetadata.versionCode != "20129558"
-        ) {
-            throw PatchException("Pure AMOLED: only the inspected Google Phone 241 release is eligible")
+        if (!isSupportedPureAmoledApp(packageMetadata.packageName, packageMetadata.versionName)) {
+            throw PatchException(
+                "Pure AMOLED: unsupported Google Phone APK " +
+                    "(package=${packageMetadata.packageName}, " +
+                    "version=${packageMetadata.versionName}, " +
+                    "versionCode=${packageMetadata.versionCode})",
+            )
         }
 
         val resourceDirectory = get("res")

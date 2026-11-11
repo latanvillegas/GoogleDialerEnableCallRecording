@@ -481,4 +481,10 @@ class PureAmoledSystemDefaultPatchTest {
         assertTrue(isAmoledThemeItem("android:windowBackground"))
         assertFalse(isAmoledThemeItem("colorOnSurface"))
     }
+    @Test fun `matches Phone 241 without requiring a fixed version code`() {
+        assertTrue(isSupportedPureAmoledApp("com.google.android.dialer", "241.0.991235506"))
+        assertFalse(isSupportedPureAmoledApp("com.google.android.dialer.morphe", "241.0.991235506"))
+        assertFalse(isSupportedPureAmoledApp("com.google.android.dialer", "240.0.999999999"))
+    }
+
 }
