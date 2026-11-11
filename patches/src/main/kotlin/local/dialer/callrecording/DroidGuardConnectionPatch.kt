@@ -22,6 +22,15 @@ internal const val BROKER_SERVICE = "com.google.android.gms.common.internal.IGms
 internal const val VERIFICATION_DENIED = "PackageVerificationRslt: not allowed:"
 internal const val DROIDGUARD_REJECTION_LOG = "Rejected DroidGuard connection; reporting DEVELOPER_ERROR"
 
+/**
+ * Distinct Google Phone APK distributions may share versionName while using
+ * different versionCodes. Bytecode fingerprints and hierarchy/handler checks
+ * below remain authoritative; unsupported structures are rejected.
+ */
+internal fun isSupportedDroidGuardApp(packageName: String, versionName: String): Boolean =
+    packageName in setOf("com.google.android.dialer", "com.google.android.dialer.morphe") &&
+        versionName == "241.0.991235506"
+
 /** Report an unavailable service through its existing failure callback; never fabricate a successful token. */
 @Suppress("unused")
 val droidGuardConnectionPatch = bytecodePatch(
@@ -33,14 +42,22 @@ val droidGuardConnectionPatch = bytecodePatch(
         *listOf("com.google.android.dialer", "com.google.android.dialer.morphe").map { packageName ->
             Compatibility(name = if (packageName.endsWith(".morphe")) "Google Phone (Morphe clone)" else "Google Phone",
                 packageName = packageName,
-                targets = listOf(AppTarget("241.0.991235506", versionCode = 20129558,
-                    description = "Experimental DroidGuard connection failure handling; not a call-audio permission fix.")))
+                targets = listOf(
+                    AppTarget(
+                        version = "241.0.991235506",
+                        description = "Experimental; accepts version-code variants only when broker bytecode validation passes.",
+                    ),
+                ))
         }.toTypedArray(),
     )
     execute {
-        if (packageMetadata.packageName !in setOf("com.google.android.dialer", "com.google.android.dialer.morphe") ||
-            packageMetadata.versionName != "241.0.991235506" || packageMetadata.versionCode != "20129558") {
-            throw PatchException("DroidGuard: this repair requires the inspected Google Phone 241 APK")
+        if (!isSupportedDroidGuardApp(packageMetadata.packageName, packageMetadata.versionName)) {
+            throw PatchException(
+                "DroidGuard: unsupported Google Phone APK " +
+                    "(package=${packageMetadata.packageName}, " +
+                    "version=${packageMetadata.versionName}, " +
+                    "versionCode=${packageMetadata.versionCode})",
+            )
         }
         val target = Fingerprint(returnType = "V", filters = listOf(string(BROKER_SERVICE)),
             custom = { method, _ -> "IGmsServiceBroker.getService failed" in method.exactStrings() })
