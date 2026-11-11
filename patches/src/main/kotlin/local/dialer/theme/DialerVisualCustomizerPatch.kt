@@ -37,6 +37,14 @@ private const val CALL_HISTORY_AFTER =
     "Llocal/dialer/visual/CallHistoryBridge;->onAfterBind(Landroid/view/View;I)V"
 
 /**
+ * Google Phone can ship different version codes under one visible release.
+ * The resource patch checks the package and version; the bytecode path still
+ * rejects any unverified method/field layout before injecting instructions.
+ */
+internal fun isSupportedVisualCustomizerApp(packageName: String, versionName: String): Boolean =
+    packageName == "com.google.android.dialer" && versionName == "241.0.991235506"
+
+/**
  * The inspected res/xml/display_options_settings.xml is inflated by Lmjz;->aU.
  * A Preference intent is handled by AndroidX without injecting a brittle listener
  * into an obfuscated settings peer. The corresponding activity is in the .mpe.
@@ -117,11 +125,13 @@ internal fun registerVisualCustomizerActivity(document: Document): Int {
 
 private val visualCustomizerResourcesPatch = resourcePatch {
     execute {
-        if (packageMetadata.packageName != "com.google.android.dialer" ||
-            packageMetadata.versionName != "241.0.991235506" ||
-            packageMetadata.versionCode != "20129558"
-        ) {
-            throw PatchException("Visual Customizer: uninspected Google Phone version")
+        if (!isSupportedVisualCustomizerApp(packageMetadata.packageName, packageMetadata.versionName)) {
+            throw PatchException(
+                "Visual Customizer: unsupported Google Phone APK " +
+                    "(package=${packageMetadata.packageName}, " +
+                    "version=${packageMetadata.versionName}, " +
+                    "versionCode=${packageMetadata.versionCode})",
+            )
         }
         document("res/xml/display_options_settings.xml").use { settings ->
             if (addVisualCustomizationPreference(settings) != 1) {
@@ -152,7 +162,12 @@ val dialerVisualCustomizerPatch = bytecodePatch(
             name = "Google Phone",
             packageName = "com.google.android.dialer",
             appIconColor = 0x1A73E8,
-            targets = listOf(AppTarget("241.0.991235506", versionCode = 20129558)),
+            targets = listOf(
+                AppTarget(
+                    version = "241.0.991235506",
+                    description = "Other version codes require matching resource and DEX structure.",
+                ),
+            ),
         ),
     )
     dependsOn(visualCustomizerResourcesPatch)

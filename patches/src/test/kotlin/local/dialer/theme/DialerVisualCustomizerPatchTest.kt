@@ -78,4 +78,11 @@ class DialerVisualCustomizerPatchTest {
         assertNotNull(error)
         assertTrue(error is app.morphe.patcher.patch.PatchException)
     }
+    @Test
+    fun `identifies supported Google Phone version without assuming a single version code`() {
+        assertTrue(isSupportedVisualCustomizerApp("com.google.android.dialer", "241.0.991235506"))
+        assertFalse(isSupportedVisualCustomizerApp("com.google.android.dialer.morphe", "241.0.991235506"))
+        assertFalse(isSupportedVisualCustomizerApp("com.google.android.dialer", "240.0.989999999"))
+    }
+
 }
