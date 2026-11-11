@@ -125,15 +125,10 @@
           "targets": [
             {
               "version": "241.0.991235506",
-              "versionCodes": {
-                "ARM64_V8A": 20129558,
-                "ARMEABI_V7A": 20129558,
-                "X86_64": 20129558,
-                "X86": 20129558
-              },
+              "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
-              "description": "Experimental AMOLED resource patch; requires APK and device validation."
+              "description": null
             }
           ]
         }
