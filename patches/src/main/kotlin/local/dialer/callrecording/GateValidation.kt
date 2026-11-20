@@ -128,7 +128,8 @@ internal fun validateManualGate(method: Method) {
                     fail(
                         "diagnostic '${instructions[diagnosticIndex].stringValue()}' has unexpected return semantics " +
                             "(expected=${diagnosticExpectations.getValue(diagnosticIndex)}, actual=$value, " +
-                            "returnRegister=$register, registers=${path.registers})",
+                            "returnRegister=$register, registers=${path.registers}, " +
+                            "diagnostics=${diagnostics.map { instructions[it].stringValue() }})",
                     )
                 }
             }
