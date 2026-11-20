@@ -82,7 +82,14 @@ internal fun validateManualGate(method: Method) {
             instruction is OffsetInstruction -> {
                 val target = addressToIndex[addresses[index] + instruction.codeOffset] ?: fail("invalid branch target")
                 if (target <= index) fail("backward branches require re-analysis")
-                if (opcode.name.startsWith("GOTO")) listOf(target) else listOf(index + 1, target)
+                when (opcode) {
+                    Opcode.GOTO, Opcode.GOTO_16, Opcode.GOTO_32 -> listOf(target)
+                    Opcode.IF_EQ, Opcode.IF_NE, Opcode.IF_LT, Opcode.IF_GE,
+                    Opcode.IF_GT, Opcode.IF_LE, Opcode.IF_EQZ, Opcode.IF_NEZ,
+                    Opcode.IF_LTZ, Opcode.IF_GEZ, Opcode.IF_GTZ, Opcode.IF_LEZ ->
+                        listOf(index + 1, target)
+                    else -> fail("unexpected branch opcode $opcode")
+                }
             }
             else -> listOf(index + 1)
         }.also { next -> if (next.any { it !in instructions.indices }) fail("control flow falls outside the method") }
