@@ -85,14 +85,18 @@ class GateValidationTest {
     }
 
     @org.junit.jupiter.api.TestFactory
-    fun `shared exit validates independent constant returns`() = listOf(
-        org.junit.jupiter.api.DynamicTest.dynamicTest(
-            runCatching { validateManualGate(sharedReturnGate("const/4 v0, 0x0")) }
-                .exceptionOrNull()?.message ?: "shared exit validated",
+    fun `shared exit validates independent constant returns`(): List<org.junit.jupiter.api.DynamicTest> {
+        val gate = sharedReturnGate("const/4 v0, 0x0")
+        val failure = runCatching { validateManualGate(gate) }.exceptionOrNull()
+        val trace = gate.instructionDump().lineSequence()
+            .filter { line -> listOf("CONST_4", "MOVE", "GOTO", "IF_EQZ", "RETURN").any(line::contains) }
+            .joinToString(" | ")
+        return listOf(org.junit.jupiter.api.DynamicTest.dynamicTest(
+            "failure=${failure?.message ?: "none"}; trace=$trace",
         ) {
-            validateManualGate(sharedReturnGate("const/4 v0, 0x0"))
-        },
-    )
+            validateManualGate(gate)
+        })
+    }
 
     @Test fun `shared exit rejects unknown return value`() {
         val method = sharedReturnGate("invoke-static {}, Ltest/Probe;->unknown()I\nmove-result v0")
