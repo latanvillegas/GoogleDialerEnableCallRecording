@@ -125,7 +125,11 @@ internal fun validateManualGate(method: Method) {
                 ?: fail("return value is not a proven boolean constant")
             diagnostics.forEach { diagnosticIndex ->
                 if (value != diagnosticExpectations.getValue(diagnosticIndex)) {
-                    fail("diagnostic '${instructions[diagnosticIndex].stringValue()}' has unexpected return semantics")
+                    fail(
+                        "diagnostic '${instructions[diagnosticIndex].stringValue()}' has unexpected return semantics " +
+                            "(expected=${diagnosticExpectations.getValue(diagnosticIndex)}, actual=$value, " +
+                            "returnRegister=$register, registers=${path.registers})",
+                    )
                 }
             }
             returnValues.add(value)
