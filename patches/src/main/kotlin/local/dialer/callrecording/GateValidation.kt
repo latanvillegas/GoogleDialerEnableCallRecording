@@ -88,65 +88,78 @@ internal fun validateManualGate(method: Method) {
         }.also { next -> if (next.any { it !in instructions.indices }) fail("control flow falls outside the method") }
     }
 
-    // At a join, a register is constant only if all incoming paths agree.
-    val states = arrayOfNulls<List<Long?>>(instructions.size)
-    states[0] = List(body.registerCount) { null }
-    val pending = ArrayDeque<Int>().apply { add(0) }
-    while (pending.isNotEmpty()) {
-        val index = pending.removeFirst()
-        val instruction = instructions[index]
-        val state = states[index]!!.toMutableList()
-        if (instruction.opcode.setsRegister()) {
-            val register = (instruction as? OneRegisterInstruction)?.registerA ?: fail("unsupported register write")
-            if (register !in state.indices) fail("invalid register")
-            state[register] = when {
-                instruction.opcode in setOf(Opcode.CONST_4, Opcode.CONST_16, Opcode.CONST) ->
-                    (instruction as WideLiteralInstruction).wideLiteral
-                instruction.opcode in setOf(Opcode.MOVE, Opcode.MOVE_FROM16, Opcode.MOVE_16) ->
-                    state[(instruction as TwoRegisterInstruction).registerB]
-                else -> null
-            }
-            if (instruction.opcode.setsWideRegister()) {
-                if (register + 1 !in state.indices) fail("invalid wide register")
-                state[register + 1] = null
-            }
-        }
-        successors[index].forEach { next ->
-            val existing = states[next]
-            val merged = existing?.mapIndexed { register, value -> if (value == state[register]) value else null } ?: state.toList()
-            if (existing != merged) {
-                states[next] = merged
-                pending.add(next)
-            }
-        }
-    }
-    val returnValues = instructions.mapIndexedNotNull { index, instruction ->
-        if (instruction.opcode != Opcode.RETURN || states[index] == null) null
-        else index to (states[index]!![(instruction as OneRegisterInstruction).registerA]
-            ?.takeIf { it == 0L || it == 1L } ?: fail("return value is not a proven boolean constant"))
-    }.toMap()
-    if (returnValues.values.toSet() != setOf(0L, 1L)) fail("expected both disabled and enabled return paths")
+    // A shared RETURN may receive both 0 and 1 from disjoint predecessors.
+    // Preserve each feasible forward path and its diagnostic provenance rather
+    // than discarding the value when two paths join at a common instruction.
+    data class PathState(val index: Int, val registers: List<Long?>, val diagnostics: Set<Int>)
 
-    fun outcomes(start: Int): Set<Long> {
-        val seen = mutableSetOf<Int>()
-        val queue = ArrayDeque<Int>().apply { add(start) }
-        val values = mutableSetOf<Long>()
-        while (queue.isNotEmpty()) {
-            val index = queue.removeFirst()
-            if (!seen.add(index)) continue
-            returnValues[index]?.let(values::add)
-            queue.addAll(successors[index])
-        }
-        return values
-    }
     val expectations = mapOf(COUNTRY_DISABLED to 0L, FLAG_DISABLED to 0L, FEATURE_ENABLED to 1L,
         "Call recording is enabled by OEM override" to 1L, "Call recording is supported" to 1L,
         "Call recording disabled by fermat" to 0L)
-    expectations.forEach { (message, expected) ->
-        instructions.indices.filter { instructions[it].stringValue() == message }.forEach { index ->
-            if (states[index] == null || outcomes(index) != setOf(expected)) fail("diagnostic '$message' has unexpected return semantics")
+    val diagnosticExpectations = instructions.indices.mapNotNull { index ->
+        expectations[instructions[index].stringValue()]?.let { index to it }
+    }.toMap()
+    val observedDiagnostics = mutableSetOf<Int>()
+    val returnValues = mutableSetOf<Long>()
+    val pending = ArrayDeque<PathState>().apply {
+        add(PathState(0, List(body.registerCount) { null }, emptySet()))
+    }
+    val visited = mutableSetOf<PathState>()
+
+    while (pending.isNotEmpty()) {
+        val path = pending.removeFirst()
+        if (!visited.add(path)) continue
+        if (visited.size > 16384) fail("gate control flow exceeds path-analysis limit")
+
+        val index = path.index
+        val instruction = instructions[index]
+        val diagnostics = if (index in diagnosticExpectations) {
+            observedDiagnostics.add(index)
+            path.diagnostics + index
+        } else path.diagnostics
+
+        if (instruction.opcode == Opcode.RETURN) {
+            val register = (instruction as OneRegisterInstruction).registerA
+            val value = path.registers.getOrNull(register)
+                ?.takeIf { it == 0L || it == 1L }
+                ?: fail("return value is not a proven boolean constant")
+            diagnostics.forEach { diagnosticIndex ->
+                if (value != diagnosticExpectations.getValue(diagnosticIndex)) {
+                    fail("diagnostic '${instructions[diagnosticIndex].stringValue()}' has unexpected return semantics")
+                }
+            }
+            returnValues.add(value)
+            continue
+        }
+
+        val registers = path.registers.toMutableList()
+        if (instruction.opcode.setsRegister()) {
+            val register = (instruction as? OneRegisterInstruction)?.registerA
+                ?: fail("unsupported register write")
+            if (register !in registers.indices) fail("invalid register")
+            registers[register] = when {
+                instruction.opcode in setOf(Opcode.CONST_4, Opcode.CONST_16, Opcode.CONST) ->
+                    (instruction as WideLiteralInstruction).wideLiteral
+                instruction.opcode in setOf(Opcode.MOVE, Opcode.MOVE_FROM16, Opcode.MOVE_16) -> {
+                    val source = (instruction as TwoRegisterInstruction).registerB
+                    if (source !in registers.indices) fail("invalid source register")
+                    registers[source]
+                }
+                else -> null
+            }
+            if (instruction.opcode.setsWideRegister()) {
+                if (register + 1 !in registers.indices) fail("invalid wide register")
+                registers[register + 1] = null
+            }
+        }
+        val nextRegisters = registers.toList()
+        successors[index].forEach { next ->
+            if (pending.size >= 16384) fail("gate path queue exceeds analysis limit")
+            pending.add(PathState(next, nextRegisters, diagnostics))
         }
     }
+    if (returnValues != setOf(0L, 1L)) fail("expected both disabled and enabled return paths")
+    if (observedDiagnostics != diagnosticExpectations.keys) fail("unreachable recording diagnostic")
 }
 
 private fun fail(reason: String): Nothing = throw PatchException("CanRecord: $reason; refusing to guess")

@@ -57,4 +57,45 @@ class GateValidationTest {
         assertFailsWith<PatchException> { selectUniqueTarget(listOf("absent" to emptyList())) }
         assertEquals("a", selectUniqueTarget(listOf("strong" to listOf("a"), "fallback" to listOf("a"))))
     }
+
+    /** v247 can have one shared return v0 with 0/1 proven on separate predecessors. */
+    private fun sharedReturnGate(disabledPath: String) = ImmutableMethod(
+        "Ltest/SyntheticCanRecord;", "a", emptyList(), "Z", AccessFlags.PUBLIC.value,
+        null, null, MutableMethodImplementation(4),
+    ).toMutable().apply {
+        addInstructions(0, """
+            const-string v1, "CanRecord.java"
+            const-string v1, "com/android/dialer/callrecording/impl/canrecord/CanRecord"
+            const-string v1, "canRecordCall"
+            const/4 v0, 0x0
+            const-string v1, "$AUDIO_FEATURE"
+            invoke-virtual {v2, v1}, Landroid/content/pm/PackageManager;->hasSystemFeature(Ljava/lang/String;)Z
+            move-result v2
+            if-eqz v2, :disabled
+            const/4 v2, 0x1
+            const-string v1, "$FEATURE_ENABLED"
+            move v0, v2
+            goto :done
+            :disabled
+            const-string v1, "$FLAG_DISABLED"
+            $disabledPath
+            :done
+            return v0
+        """.trimIndent())
+    }
+
+    @Test fun `shared exit validates independent constant returns`() {
+        validateManualGate(sharedReturnGate("const/4 v0, 0x0"))
+    }
+
+    @Test fun `shared exit rejects unknown return value`() {
+        val method = sharedReturnGate("invoke-static {}, Ltest/Probe;->unknown()I\nmove-result v0")
+        assertFailsWith<PatchException> { validateManualGate(method) }
+    }
+
+    @Test fun `shared exit rejects contradictory diagnostic`() {
+        val method = sharedReturnGate("const/4 v0, 0x1")
+        val failure = assertFailsWith<PatchException> { validateManualGate(method) }
+        assertTrue(failure.message!!.contains("unexpected return semantics"))
+    }
 }
