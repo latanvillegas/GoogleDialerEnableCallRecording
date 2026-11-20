@@ -11,7 +11,9 @@ import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMuta
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
@@ -31,6 +33,7 @@ private const val VISUAL_ACTION = "local.dialer.visual.CONFIGURE"
 private const val VISUAL_HOOK =
     "Llocal/dialer/visual/VisualCustomizer;->apply(Landroid/view/View;)V"
 private const val CALL_LOG_ADAPTER = "Lkit;"
+private const val CALL_LOG_ADAPTER_247 = "Lkwc;"
 private const val CALL_HISTORY_BEFORE =
     "Llocal/dialer/visual/CallHistoryBridge;->onBeforeBind(Landroid/view/View;)V"
 private const val CALL_HISTORY_AFTER =
@@ -42,7 +45,9 @@ private const val CALL_HISTORY_AFTER =
  * rejects any unverified method/field layout before injecting instructions.
  */
 internal fun isSupportedVisualCustomizerApp(packageName: String, versionName: String): Boolean =
-    packageName == "com.google.android.dialer" && versionName == "241.0.991235506"
+    packageName == "com.google.android.dialer" && versionName in setOf(
+        "241.0.991235506", "247.0.1016877637-pixel",
+    )
 
 /**
  * The inspected res/xml/display_options_settings.xml is inflated by Lmjz;->aU.
@@ -167,6 +172,11 @@ val dialerVisualCustomizerPatch = bytecodePatch(
                     version = "241.0.991235506",
                     description = "Other version codes require matching resource and DEX structure.",
                 ),
+                AppTarget(
+                    version = "247.0.1016877637-pixel",
+                    versionCode = 20245848,
+                    description = "Experimental; visual bytecode structure inspected, call-history rendering needs device testing.",
+                ),
             ),
         ),
     )
@@ -174,6 +184,7 @@ val dialerVisualCustomizerPatch = bytecodePatch(
     extendWith("extensions/visual-customizer.mpe")
 
     execute {
+        val is247 = packageMetadata.versionName == "247.0.1016877637-pixel"
         val dialpadClass = classDefBy(DIALPAD)
         val layout = dialpadClass.methods.singleOrNull { method ->
             method.name == "onLayout" && method.returnType == "V" &&
@@ -221,6 +232,7 @@ val dialerVisualCustomizerPatch = bytecodePatch(
         // without intercepting Telecom callbacks, answer/reject/end handlers,
         // InCallServiceImpl, or Android's ringtone engine.
         val inCall = classDefBy(IN_CALL_ACTIVITY)
+        val inCallSuperclass = if (is247) "Lqox;" else "Loqs;"
         fun lifecycleMethod(name: String, registers: Int): Method {
             val method = inCall.methods.singleOrNull { candidate ->
                 candidate.name == name && candidate.returnType == "V" &&
@@ -231,7 +243,7 @@ val dialerVisualCustomizerPatch = bytecodePatch(
             val superCall = body.instructions.filterIsInstance<ReferenceInstruction>()
                 .mapNotNull { it.reference as? MethodReference }
                 .count {
-                    it.definingClass == "Loqs;" && it.name == name &&
+                    it.definingClass == inCallSuperclass && it.name == name &&
                         it.parameterTypes.isEmpty() && it.returnType == "V"
                 }
             if (body.registerCount != registers || superCall != 1 ||
@@ -265,6 +277,84 @@ val dialerVisualCustomizerPatch = bytecodePatch(
         // and ends by handing Llb.a back to the RecyclerView. Native model
         // Lkjq.E() returns Lkgn, whose q:I is the existing call-type value.
         // Never classify spam by name, avatar or screen text.
+        if (is247) {
+            // Phone 247: Lkwc.E is called from the native row-binding path.
+            // Lkwy extends Llf and stores its current call model in Lkoa.a.
+            // Lkwy.G's packed-switch uses Lktt.q as the Android call type.
+            val adapterClass = classDefBy(CALL_LOG_ADAPTER_247)
+            val parameters247 = listOf("Lahfu;", "Lkoa;", "Llf;", "I")
+            val bind = adapterClass.methods.singleOrNull { method ->
+                method.name == "E" && method.returnType == "V" &&
+                    method.parameterTypes.map { it.toString() } == parameters247
+            } ?: throw PatchException("Visual Customizer: Phone 247 history binder not found")
+            val implementation = bind.implementation
+                ?: throw PatchException("Visual Customizer: Phone 247 history binder has no body")
+            val binderCalls = implementation.instructions.filterIsInstance<ReferenceInstruction>()
+                .mapNotNull { it.reference as? MethodReference }
+                .count { it.definingClass == "Lkwy;" && it.name == "G" &&
+                    it.returnType == "V" && it.parameterTypes.isEmpty() }
+
+            val holderClass = classDefBy("Lkwy;")
+            val baseHolder = classDefBy("Llf;")
+            val model = classDefBy("Lktt;")
+            val wrapper = classDefBy("Lkoa;")
+            val modelGetter = holderClass.methods.singleOrNull {
+                it.name == "E" && it.returnType == "Lktt;" && it.parameterTypes.isEmpty()
+            } ?: throw PatchException("Visual Customizer: Phone 247 model getter missing")
+            val getterFields = modelGetter.implementation?.instructions
+                ?.filterIsInstance<ReferenceInstruction>()
+                ?.mapNotNull { it.reference as? FieldReference }?.toList().orEmpty()
+            val iconBinding = holderClass.methods.singleOrNull {
+                it.name == "G" && it.returnType == "V" && it.parameterTypes.isEmpty()
+            } ?: throw PatchException("Visual Customizer: Phone 247 native icon binder missing")
+            val iconInstructions = iconBinding.implementation?.instructions?.toList()
+                ?: throw PatchException("Visual Customizer: Phone 247 native icon binder has no body")
+            val nativeCallTypeSwitches = iconInstructions.indices.count { index ->
+                val field = (iconInstructions[index] as? ReferenceInstruction)?.reference as? FieldReference
+                field?.definingClass == "Lktt;" && field.name == "q" && field.type == "I" &&
+                    iconInstructions.getOrNull(index + 2)?.opcode == Opcode.PACKED_SWITCH &&
+                    (iconInstructions[index] as? OneRegisterInstruction)?.registerA ==
+                    (iconInstructions.getOrNull(index + 2) as? OneRegisterInstruction)?.registerA
+            }
+            if (!AccessFlags.PRIVATE.isSet(bind.accessFlags) ||
+                adapterClass.superclass != "Lkj;" || implementation.registerCount != 16 ||
+                implementation.tryBlocks.isNotEmpty() ||
+                implementation.instructions.count { it.opcode == Opcode.RETURN_VOID } != 1 ||
+                implementation.instructions.lastOrNull()?.opcode != Opcode.RETURN_VOID ||
+                binderCalls != 1 || holderClass.superclass != "Llf;" ||
+                baseHolder.fields.none { it.name == "a" && it.type == "Landroid/view/View;" } ||
+                holderClass.fields.none { it.name == "D" && it.type == "Lkoa;" } ||
+                wrapper.fields.none { it.name == "a" && it.type == "Lktt;" } ||
+                model.fields.none { it.name == "q" && it.type == "I" } ||
+                getterFields.none { it.definingClass == "Lkwy;" && it.name == "D" && it.type == "Lkoa;" } ||
+                getterFields.none { it.definingClass == "Lkoa;" && it.name == "a" && it.type == "Lktt;" } ||
+                nativeCallTypeSwitches != 1
+            ) {
+                throw PatchException("Visual Customizer: Phone 247 history model contract changed")
+            }
+            val mutableAdapter = mutableClassDefBy(adapterClass)
+            val rowBind = mutableAdapter.methods.single {
+                it.name == "E" && it.parameterTypes.map { type -> type.toString() } == parameters247
+            }
+            val returnIndex = rowBind.implementation!!.instructions.indexOfLast {
+                it.opcode == Opcode.RETURN_VOID
+            }
+            // .locals 11 + p0..p4 = 16; p3 (v14) is live at the single return.
+            // v0 and v1 are local and dead at return; no register expansion.
+            rowBind.addInstructions(returnIndex, """
+                iget-object v0, p3, Llf;->a:Landroid/view/View;
+                move-object v1, p3
+                check-cast v1, Lkwy;
+                invoke-virtual {v1}, Lkwy;->E()Lktt;
+                move-result-object v1
+                iget v1, v1, Lktt;->q:I
+                invoke-static {v0, v1}, $CALL_HISTORY_AFTER
+            """.trimIndent())
+            rowBind.addInstructions(0, """
+                iget-object v0, p3, Llf;->a:Landroid/view/View;
+                invoke-static {v0}, $CALL_HISTORY_BEFORE
+            """.trimIndent())
+        } else {
         val adapterClass = classDefBy(CALL_LOG_ADAPTER)
         val bind = adapterClass.methods.singleOrNull { candidate ->
             candidate.name == "E" &&
@@ -327,5 +417,6 @@ val dialerVisualCustomizerPatch = bytecodePatch(
             iget-object v0, p3, Llb;->a:Landroid/view/View;
             invoke-static {v0}, $CALL_HISTORY_BEFORE
         """.trimIndent())
+        }
     }
 }

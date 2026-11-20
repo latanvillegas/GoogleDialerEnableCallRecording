@@ -16,7 +16,9 @@ private const val BLACK = "#FF000000"
  * Resource layout/style invariants below still reject incompatible variants.
  */
 internal fun isSupportedPureAmoledApp(packageName: String, versionName: String): Boolean =
-    packageName == "com.google.android.dialer" && versionName == "241.0.991235506"
+    packageName == "com.google.android.dialer" && versionName in setOf(
+        "241.0.991235506", "247.0.1016877637-pixel",
+    )
 
 /**
  * Only neutral night surfaces are eligible. Preserve functional colors such as
@@ -501,6 +503,11 @@ val pureAmoledSystemDefaultPatch = resourcePatch(
                 AppTarget(
                     version = "241.0.991235506",
                     description = "Experimental: version-code variants require matching resource layouts and device validation.",
+                ),
+                AppTarget(
+                    version = "247.0.1016877637-pixel",
+                    versionCode = 20245848,
+                    description = "Resource structure inspected; night theme changes require device verification.",
                 ),
             ),
         ),

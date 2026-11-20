@@ -46,7 +46,9 @@ tasks.register<JavaExec>("inspectApk") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets["test"].runtimeClasspath
     mainClass.set("local.dialer.callrecording.VerifyApkKt")
-    args(rootProject.file("GooglePhone-241-base.apk").absolutePath, rootProject.file("verification").absolutePath, "inspect")
+    args(rootProject.file(
+        providers.gradleProperty("verificationApk").getOrElse("GooglePhone-241-base.apk"),
+    ).absolutePath, rootProject.file("verification").absolutePath, "inspect")
     maxHeapSize = "3g"
 }
 
@@ -84,7 +86,9 @@ tasks.register<JavaExec>("verifyApk") {
     dependsOn(tasks.testClasses, "buildAndroid")
     classpath = sourceSets["test"].runtimeClasspath
     mainClass.set("local.dialer.callrecording.VerifyApkKt")
-    args(rootProject.file("GooglePhone-241-base.apk").absolutePath, rootProject.file("verification").absolutePath,
+    args(rootProject.file(
+        providers.gradleProperty("verificationApk").getOrElse("GooglePhone-241-base.apk"),
+    ).absolutePath, rootProject.file("verification").absolutePath,
         "patch", layout.buildDirectory.file("libs/patches-${project.version}.mpp").get().asFile.absolutePath)
     maxHeapSize = "3g"
 }

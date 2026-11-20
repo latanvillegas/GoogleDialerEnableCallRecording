@@ -29,7 +29,9 @@ internal const val DROIDGUARD_REJECTION_LOG = "Rejected DroidGuard connection; r
  */
 internal fun isSupportedDroidGuardApp(packageName: String, versionName: String): Boolean =
     packageName in setOf("com.google.android.dialer", "com.google.android.dialer.morphe") &&
-        versionName == "241.0.991235506"
+        versionName in setOf(
+            "241.0.991235506", "247.0.1016877637-pixel",
+        )
 
 /** Report an unavailable service through its existing failure callback; never fabricate a successful token. */
 @Suppress("unused")
@@ -46,6 +48,10 @@ val droidGuardConnectionPatch = bytecodePatch(
                     AppTarget(
                         version = "241.0.991235506",
                         description = "Experimental; accepts version-code variants only when broker bytecode validation passes.",
+                    ),
+                    AppTarget(
+                        version = "247.0.1016877637-pixel",
+                        description = "Experimental; broker and DroidGuard client inspected in DEX. Device tests required.",
                     ),
                 ))
         }.toTypedArray(),

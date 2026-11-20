@@ -35,8 +35,12 @@ class DroidGuardConnectionTest {
     @Test fun `accepts Phone 241 package variants without binding to one version code`() {
         assertTrue(isSupportedDroidGuardApp("com.google.android.dialer", "241.0.991235506"))
         assertTrue(isSupportedDroidGuardApp("com.google.android.dialer.morphe", "241.0.991235506"))
+        assertTrue(isSupportedDroidGuardApp("com.google.android.dialer", "247.0.1016877637-pixel"))
+        assertTrue(isSupportedDroidGuardApp("com.google.android.dialer.morphe", "247.0.1016877637-pixel"))
+        assertFalse(isSupportedDroidGuardApp("com.google.android.dialer", "247.0.1016877637"))
         assertFalse(isSupportedDroidGuardApp("com.google.android.dialer", "240.0.999999999"))
         assertFalse(isSupportedDroidGuardApp("com.example.dialer", "241.0.991235506"))
+        assertFalse(isSupportedDroidGuardApp("com.example.dialer", "247.0.1016877637-pixel"))
     }
 
 }

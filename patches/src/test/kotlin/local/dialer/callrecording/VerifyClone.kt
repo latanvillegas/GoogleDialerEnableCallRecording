@@ -27,7 +27,9 @@ fun main(args: Array<String>) {
         useBytecodeMode = BytecodeMode.STRIP_SAFE)).use { patcher ->
         val metadata = patcher.context.packageMetadata
         check(metadata.packageName == "com.google.android.dialer.morphe")
-        check(metadata.versionName == "241.0.991235506")
+        check(metadata.versionName in setOf(
+            "241.0.991235506", "247.0.1016877637-pixel",
+        ))
         patcher += patches
         runBlocking { patcher().collect { result -> result.exception?.let { throw it } } }
         val result = patcher.get()

@@ -23,6 +23,8 @@ val enableCallRecordingPatch = bytecodePatch(
             targets = listOf(
                 AppTarget("241.0.991235506", versionCode = 20129558,
                     description = "APK bytecode validated; physical-device recording still requires testing."),
+                AppTarget("247.0.1016877637-pixel", versionCode = 20245848,
+                    description = "CanRecord gate inspected in DEX; device call-audio recording still requires testing."),
                 AppTarget(version = null, isExperimental = true),
             ),
         ),

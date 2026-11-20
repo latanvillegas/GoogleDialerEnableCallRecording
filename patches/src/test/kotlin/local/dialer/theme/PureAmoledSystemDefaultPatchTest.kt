@@ -483,6 +483,8 @@ class PureAmoledSystemDefaultPatchTest {
     }
     @Test fun `matches Phone 241 without requiring a fixed version code`() {
         assertTrue(isSupportedPureAmoledApp("com.google.android.dialer", "241.0.991235506"))
+        assertTrue(isSupportedPureAmoledApp("com.google.android.dialer", "247.0.1016877637-pixel"))
+        assertFalse(isSupportedPureAmoledApp("com.google.android.dialer", "247.0.1016877637"))
         assertFalse(isSupportedPureAmoledApp("com.google.android.dialer.morphe", "241.0.991235506"))
         assertFalse(isSupportedPureAmoledApp("com.google.android.dialer", "240.0.999999999"))
     }

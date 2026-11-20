@@ -89,7 +89,10 @@ fun main(args: Array<String>) {
         useBytecodeMode = BytecodeMode.STRIP_FAST)).use { patcher ->
         val metadata = patcher.context.packageMetadata
         check(metadata.packageName == "com.google.android.dialer")
-        check(metadata.versionName == "241.0.991235506" && metadata.versionCode == "20129558")
+        check(
+            (metadata.versionName == "241.0.991235506" && metadata.versionCode == "20129558") ||
+                (metadata.versionName == "247.0.1016877637-pixel" && metadata.versionCode == "20245848")
+        ) { "Unverified Google Phone APK: ${metadata.versionName} (${metadata.versionCode})" }
         output.resolve("package-metadata.txt").writeText(
             "package=${metadata.packageName}\nversion=${metadata.versionName}\nversionCode=${metadata.versionCode}\nsha256=$inputHash\n",
         )
