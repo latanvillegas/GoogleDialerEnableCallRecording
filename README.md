@@ -26,8 +26,9 @@ See [device testing and installation](docs/testing.md) for signing, privileged p
 
 **Supported versions:**
 
-| 241.0.991235506 |
-| :---: |
+| 241.0.991235506 | 247.0.1016877637-pixel |
+| :---: | :---: |
+|  | Experimental; visual bytecode structure inspected, call-history rendering needs device testing. |
 
 | Patch | Description |
 |---|---|
@@ -44,8 +45,8 @@ See [device testing and installation](docs/testing.md) for signing, privileged p
 
 **Supported versions:**
 
-| 241.0.991235506 |
-| :---: |
+| 241.0.991235506 | 247.0.1016877637-pixel |
+| :---: | :---: |
 
 | Patch | Description |
 |---|---|

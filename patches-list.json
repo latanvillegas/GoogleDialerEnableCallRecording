@@ -22,6 +22,18 @@
               "isExperimental": false,
               "minSdk": null,
               "description": null
+            },
+            {
+              "version": "247.0.1016877637-pixel",
+              "versionCodes": {
+                "ARM64_V8A": 20245848,
+                "ARMEABI_V7A": 20245848,
+                "X86_64": 20245848,
+                "X86": 20245848
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Experimental; visual bytecode structure inspected, call-history rendering needs device testing."
             }
           ]
         }
@@ -55,6 +67,18 @@
               "description": "APK bytecode validated; physical-device recording still requires testing."
             },
             {
+              "version": "247.0.1016877637-pixel",
+              "versionCodes": {
+                "ARM64_V8A": 20245848,
+                "ARMEABI_V7A": 20245848,
+                "X86_64": 20245848,
+                "X86": 20245848
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "CanRecord gate inspected in DEX; device call-audio recording still requires testing."
+            },
+            {
               "version": null,
               "versionCodes": null,
               "isExperimental": true,
@@ -86,6 +110,13 @@
               "isExperimental": false,
               "minSdk": null,
               "description": null
+            },
+            {
+              "version": "247.0.1016877637-pixel",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
             }
           ]
         },
@@ -99,6 +130,13 @@
           "targets": [
             {
               "version": "241.0.991235506",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "247.0.1016877637-pixel",
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -129,6 +167,18 @@
               "isExperimental": false,
               "minSdk": null,
               "description": null
+            },
+            {
+              "version": "247.0.1016877637-pixel",
+              "versionCodes": {
+                "ARM64_V8A": 20245848,
+                "ARMEABI_V7A": 20245848,
+                "X86_64": 20245848,
+                "X86": 20245848
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Resource structure inspected; night theme changes require device verification."
             }
           ]
         }
